@@ -1,6 +1,3 @@
-"""Settings for audio reactive LED strip"""
-import os
-
 # UDP DATA FOR ESP32
 UDP_IP = '192.168.1.150'
 UDP_PORT = 12345

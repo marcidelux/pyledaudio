@@ -1,22 +1,10 @@
 MIC_RATE = 48000
-"""Sampling frequency of the microphone in Hz"""
-
-""" Microphone device index to use."""
 MIC_DEVICE_INDEX = 4
-
 FPS = 60
-"""Desired refresh rate of the visualization (frames per second)"""
-
 MIN_FREQUENCY = 60
-"""Frequencies below this value will be removed during audio processing"""
-
 MAX_FREQUENCY = 18000
-"""Frequencies above this value will be removed during audio processing"""
-
 N_FFT_BINS = 12
-
 N_ROLLING_HISTORY = 2
-"""Number of past audio frames to include in the rolling window"""
 
 """ Set the configuration for the audio visualization."""
 def set_config(config:dict):
