@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>LED Controller</title>
+  <script src="chart.js"></script>
+  <style>
+    html, body {
+      margin: 0;
+      height: 100%;
+    }
+
+    body {
+      display: flex;
+      flex-direction: column;
+    }
+
+    #topControls {
+      padding: 10px;
+      background: #f0f0f0;
+    }
+
+    #chartContainer {
+      flex-grow: 1;
+      height: calc(100% - 60px); /* Adjust based on your top area height */
+    }
+
+    #bandChart {
+      width: 100%;
+      height: 100%;
+    }
+  </style>
+</head>
+<body>
+  <div id="topControls">
+    <button id="healthBtn">Health</button>
+    <p id="output">Status: -</p>
+  </div>
+
+  <div id="chartContainer">
+    <canvas id="bandChart"></canvas>
+  </div>
+
+  <script>
+    document.getElementById("healthBtn").onclick = function() {
+      fetch("/health")
+        .then(res => res.status === 200 ? res.json() : Promise.reject())
+        .then(() => document.getElementById("output").innerText = "Status: OK")
+        .catch(() => document.getElementById("output").innerText = "Status: ERROR");
+    };
+
+    async function initChart() {
+      const response = await fetch("/config");
+      const config = await response.json();
+
+      const labels = [];
+      for (let i = 1; i <= config.num_bands; i++) {
+        labels.push(`Band ${i}`);
+      }
+
+      const ctx = document.getElementById('bandChart').getContext('2d');
+
+      const chart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: labels,
+          datasets: [{
+            label: 'Band Power',
+            data: Array(config.num_bands).fill(0),
+            backgroundColor: config.colors
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          animation: false,
+          scales: {
+            y: { min: 0, max: 255 }
+          }
+        }
+      });
+
+      const socket = new WebSocket(`ws://${location.host}/ws/bands`);
+      socket.onmessage = event => {
+        const msg = JSON.parse(event.data);
+        if (msg.bands) {
+          chart.data.datasets[0].data = msg.bands;
+          chart.update();
+        }
+      };
+    }
+
+    initChart();
+  </script>
+</body>
+</html>
