@@ -23,9 +23,10 @@ mel_gain = None
 mel_smoothing = None
 y_roll = None
 fft_window = None
+max_volume = None
 
 def init():
-    global mel_gain, mel_smoothing, y_roll, fft_window
+    global mel_gain, mel_smoothing, y_roll, fft_window, max_volume
 
     dsp.create_mel_bank()
 
@@ -47,14 +48,21 @@ def init():
     y_roll = np.random.rand(rolling_frames, samples_per_frame) / 1e16
     fft_window = np.hamming(samples_per_frame * rolling_frames)
 
-def create_band_levels(audio_chunk: np.ndarray):
-    global y_roll
+    max_volume = 0.002
+
+def create_band_levels(audio_chunk: np.ndarray) -> bytes | None:
+    global y_roll, max_volume
     y = audio_chunk / 2.0**15
 
     # Rolling buffer
     y_roll[:-1] = y_roll[1:]
     y_roll[-1, :] = y
     y_data = np.concatenate(y_roll, axis=0).astype(np.float32)
+
+    # Volume check (before windowing)
+    volume = np.sqrt(np.mean(y_data**2))
+    if volume < max_volume:  # threshold (adjustable)
+        return None
 
     # Window and pad
     y_data *= fft_window
@@ -75,7 +83,7 @@ def create_band_levels(audio_chunk: np.ndarray):
 
     # Convert to 0–255 brightness levels
     mel = np.clip(mel, 0, 1)
-    return (mel * 255).astype(int).tolist()
+    return bytes((mel * 255).astype(np.uint8))
 
 """ 
 Starts an audio stream to capture microphone input and process it in real-time.

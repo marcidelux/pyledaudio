@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>LED Visualizer</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      margin: 0;
+      padding: 0;
+      background: #111;
+      color: white;
+    }
+    .section {
+      margin: 10px;
+    }
+    .section h2 {
+      margin: 5px 0;
+    }
+    .segment {
+      display: flex;
+      margin-bottom: 2px;
+    }
+    .led {
+      width: 10px;
+      height: 10px;
+      margin-right: 1px;
+      background-color: black;
+    }
+  </style>
+</head>
+<body>
+  <div class="section" id="section-A">
+    <h2>Section A</h2>
+  </div>
+  <div class="section" id="section-B">
+    <h2>Section B</h2>
+  </div>
+  <div class="section" id="section-C">
+    <h2>Section C</h2>
+  </div>
+
+  <script>
+    const sectionConfig = {
+      A: { segments: 8, ledsPerSegment: 30 },
+      B: { segments: 8, ledsPerSegment: 22 },
+      C: { segments: 8, ledsPerSegment: 60 }
+    };
+
+    const ledMap = {};
+
+    for (const sectionId in sectionConfig) {
+      const config = sectionConfig[sectionId];
+      const container = document.getElementById(`section-${sectionId}`);
+      ledMap[sectionId] = [];
+
+      for (let seg = 0; seg < config.segments; seg++) {
+        const row = document.createElement("div");
+        row.classList.add("segment");
+
+        const leds = [];
+        for (let i = 0; i < config.ledsPerSegment; i++) {
+          const led = document.createElement("div");
+          led.classList.add("led");
+          row.appendChild(led);
+          leds.push(led);
+        }
+        container.appendChild(row);
+        ledMap[sectionId].push(leds);
+      }
+    }
+
+    function setPixelColor(led, r, g, b) {
+      led.style.backgroundColor = `rgb(${r}, ${g}, ${b})`;
+    }
+
+    function applyToSegment(sectionId, segmentIndex, pixelData) {
+      const leds = ledMap[sectionId][segmentIndex];
+      for (let i = 0; i < leds.length; i++) {
+        const r = pixelData[i * 3 + 1];
+        const g = pixelData[i * 3];
+        const b = pixelData[i * 3 + 2];
+        setPixelColor(leds[i], r, g, b);
+      }
+    }
+
+    function applyToSection(sectionId, pixelData) {
+      const ledsPerSegment = sectionConfig[sectionId].ledsPerSegment;
+
+      for (let seg = 0; seg < 8; seg++) {
+        const offset = seg * ledsPerSegment * 3;
+        const segmentData = pixelData.slice(offset, offset + ledsPerSegment * 3);
+        applyToSegment(sectionId, seg, segmentData);
+      }
+    }
+
+    const socket = new WebSocket(`ws://${location.host}/ws/leds`);
+    socket.binaryType = "arraybuffer";
+
+    socket.onmessage = function(event) {
+      const sectionIdMap = ['A', 'B', 'C'];
+      const data = new Uint8Array(event.data);
+      const type = data[0];
+      const sectionId = sectionIdMap[data[1]];
+      const payloadLen = (data[2] << 8) | data[3];
+
+      if (type === 0) {
+        for (const sectionId in ledMap) {
+          for (let seg = 0; seg < ledMap[sectionId].length; seg++) {
+            const leds = ledMap[sectionId][seg];
+            leds.forEach(led => setPixelColor(led, 0, 0, 0));
+          }
+        }
+      } else if (type === 1) {
+        // TYPE_FULL_SECTION
+        const pixelData = data.slice(4, 4 + payloadLen);
+        applyToSection(sectionId, pixelData);
+        //console.log("applyToSection:", pixelData);
+      } else if (type === 2) {
+        // TYPE_SINGLE_SEGMENT
+        const ledsPerSegment = sectionConfig[sectionId].ledsPerSegment;
+        const segmentDataLength = ledsPerSegment * 3;
+        const segmentCount = payloadLen - segmentDataLength;
+
+        const segmentIds = data.slice(4, 4 + segmentCount);
+        const colorStart = 4 + segmentCount;
+
+        for (let i = 0; i < segmentIds.length; i++) {
+          const segId = segmentIds[i];
+          const segmentData = data.slice(colorStart, data.length);
+          applyToSegment(sectionId, segId, segmentData);
+        }
+      }
+    };
+  </script>
+</body>
+</html>
