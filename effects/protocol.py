@@ -39,9 +39,15 @@ class PixelArray:
         for i in range(self.length):
             self.set_pixel(i, pixel)
 
+    def __setitem__(self, index: int, pixel: Pixel):
+        self.set_pixel(index, pixel)
+
     def get_pixel(self, index):
         start_idx = index * 3
         return Pixel(self.array[start_idx+1], self.array[start_idx], self.array[start_idx + 2])
+
+    def __getitem__(self, index: int) -> Pixel:
+        return self.get_pixel(index)
 
     def to_bytes(self):
         return self.array
@@ -49,7 +55,37 @@ class PixelArray:
     def __repr__(self):
         return f"RgbArray(length={self.length}, array={self.array})"
 
+class PixelArrayView:
+    def __init__(self, parent: PixelArray, start: int, length: int, flip: bool = False):
+        self.parent = parent
+        self.start = start
+        self._length = length  # rename to avoid conflict
+        self.flip = flip
+
+    @property
+    def length(self):
+        return self._length
+
+    def to_bytes(self) -> bytearray:
+        start_byte = self.start * 3
+        end_byte = start_byte + self.length * 3
+        if self.flip:
+            flipped_array = bytearray()
+            for i in range(self.length):
+                pixel_start = start_byte + (self.length - 1 - i) * 3
+                flipped_array.extend(self.parent.array[pixel_start:pixel_start + 3])
+            return flipped_array
+        return self.parent.array[start_byte:end_byte]
+
 class Command:
+    COMMAND_TYPE_OFF = 0x00  # Command type for turning off the device
+    COMMAND_TYPE_FULL_SECTION = 0x01  # Command type for section control
+    COMMAND_TYPE_SINGLE_SEGMENT = 0x02  # Command type for single segment control
+
+    SECTION_ID_A = 0x00  # Section ID for section A
+    SECTION_ID_B = 0x01  # Section ID for section B
+    SECTION_ID_C = 0x02  # Section ID for section C
+
     def __init__(self, type:uint8, section_id:uint8, segment_ids:bytearray, pixels: PixelArray):
         self.type = type
         self.section_id = section_id
@@ -59,10 +95,10 @@ class Command:
         self.header_size = 4 # 1 byte for type, 1 byte for section_id, 2 bytes for payload_len
         self.segment_ids_len = len(segment_ids)  # number of segments
         self.pixels_byte_len = pixels.length * 3  # 3 bytes per pixel (GRB)
-        self.payload_len = self.segment_ids_len +  self.pixels_byte_len # uint16_t
+        self.segments_pixels_len = self.segment_ids_len +  self.pixels_byte_len # uint16_t
 
         # Preallocate full payload
-        self.payload = bytearray(self.header_size + self.payload_len)
+        self.payload = bytearray(self.header_size + self.segments_pixels_len)
 
         self._write_header()
         self._write_segment_ids()
@@ -71,7 +107,7 @@ class Command:
     def _write_header(self):
         self.payload[0] = self.type
         self.payload[1] = self.section_id
-        self.payload[2:4] = self.payload_len.to_bytes(2, 'big')
+        self.payload[2:4] = self.segments_pixels_len.to_bytes(2, 'big')
     
     def _write_segment_ids(self):
         self.payload[4:4 + self.segment_ids_len] = self.segment_ids
@@ -83,8 +119,8 @@ class Command:
     def set_segment_ids(self, segment_ids: bytearray):
             self.segment_ids = segment_ids
             self.segment_ids_len = len(segment_ids)
-            self.payload_len = self.segment_ids_len + self.pixels_byte_len
-            self.payload = bytearray(self.header_size + self.payload_len)
+            self.segments_pixels_len = self.segment_ids_len + self.pixels_byte_len
+            self.payload = bytearray(self.header_size + self.segments_pixels_len)
             self._write_header()
             self._write_segment_ids()
             self._write_pixels()
@@ -97,30 +133,6 @@ class Command:
     
     def __repr__(self):
         return f"Command(type={self.type}, section_id={self.section_id}, segment_ids={self.segment_ids}, pixels={self.pixels})"
-
-class Mumush:
-    COMMAND_TYPE_OFF = 0x00  # Command type for turning off the device
-    COMMAND_TYPE_FULL_SECTION = 0x01  # Command type for section control
-    COMMAND_TYPE_SINGLE_SEGMENT = 0x02  # Command type for single segment control
-
-    SECTION_ID_A = 0x00  # Section ID for section A
-    SECTION_ID_B = 0x01  # Section ID for section B
-    SECTION_ID_C = 0x02  # Section ID for section C
-
-    def __init__(self):
-        self.segment_A = PixelArray(30)
-        self.segment_B = PixelArray(22)
-        self.segment_C = PixelArray(60)
-        
-        self.section_A = PixelArray(240)
-        self.section_B = PixelArray(176)
-        self.section_C = PixelArray(480)
-
-        self.turn_off = Command(self.COMMAND_TYPE_OFF, 0x00, bytearray(), PixelArray(0))
-        
-        self.command_full_section_A = Command(self.COMMAND_TYPE_FULL_SECTION, self.SECTION_ID_A, bytearray(), self.section_A)
-        self.command_full_section_B = Command(self.COMMAND_TYPE_FULL_SECTION, self.SECTION_ID_B, bytearray(), self.section_B)
-        self.command_full_section_C = Command(self.COMMAND_TYPE_FULL_SECTION, self.SECTION_ID_C, bytearray(), self.section_C)
 
 class Color:
     BLACK   = Pixel(0, 0, 0)
@@ -145,3 +157,14 @@ class Color:
         PINK, LIME, SKY, VIOLET,
         TEAL, WHITE, BLACK
     ]
+
+section_A = PixelArray(240)
+section_B = PixelArray(176)
+section_C = PixelArray(480)
+segment_A = PixelArray(30)
+segment_B = PixelArray(22)
+segment_C = PixelArray(60)
+cmd_turn_off = Command(Command.COMMAND_TYPE_OFF, 0x00, bytearray(), PixelArray(0))
+cmd_section_A = Command(Command.COMMAND_TYPE_FULL_SECTION, Command.SECTION_ID_A, bytearray(), section_A)
+cmd_section_B = Command(Command.COMMAND_TYPE_FULL_SECTION, Command.SECTION_ID_B, bytearray(), section_B)
+cmd_section_C = Command(Command.COMMAND_TYPE_FULL_SECTION, Command.SECTION_ID_C, bytearray(), section_C)

@@ -7,16 +7,12 @@
     html, body {
       margin: 0;
       height: 100%;
+      background-color: gray;
     }
 
     body {
       display: flex;
       flex-direction: column;
-    }
-
-    #topControls {
-      padding: 10px;
-      background: #f0f0f0;
     }
 
     #chartContainer {
@@ -31,22 +27,12 @@
   </style>
 </head>
 <body>
-  <div id="topControls">
-    <button id="healthBtn">Health</button>
-    <p id="output">Status: -</p>
-  </div>
 
   <div id="chartContainer">
     <canvas id="bandChart"></canvas>
   </div>
 
   <script>
-    document.getElementById("healthBtn").onclick = function() {
-      fetch("/health")
-        .then(res => res.status === 200 ? res.json() : Promise.reject())
-        .then(() => document.getElementById("output").innerText = "Status: OK")
-        .catch(() => document.getElementById("output").innerText = "Status: ERROR");
-    };
 
     async function initChart() {
       const response = await fetch("/config");

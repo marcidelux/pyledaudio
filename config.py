@@ -16,7 +16,7 @@ MIN_FREQUENCY = 60
 """Frequencies below this value will be removed during audio processing"""
 MAX_FREQUENCY = 18000
 """Frequencies above this value will be removed during audio processing"""
-N_FFT_BINS = 10
+N_FFT_BINS = 12
 """Number of frequency bins to use when transforming audio to frequency domain"""
 N_ROLLING_HISTORY = 2
 """Number of past audio frames to include in the rolling window"""

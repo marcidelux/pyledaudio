@@ -1,39 +1,37 @@
-from .protocol import Command, Mumush, Color
+from .protocol import Command, Color, PixelArray, PixelArrayView
+from .effect import Effect
+from typing import Optional
 
-class SpectrumEffect(Mumush):
+class SpectrumEffect(Effect):
     def __init__(self):
         super().__init__()
-        self.two_segments_A = Command(self.COMMAND_TYPE_SINGLE_SEGMENT, self.SECTION_ID_A, bytearray([0, 2, 4, 6]), self.segment_A)
-        self.two_segments_C = Command(self.COMMAND_TYPE_SINGLE_SEGMENT, self.SECTION_ID_C, bytearray([0, 2, 4, 6]), self.segment_C)
+        self.spectrum = PixelArray(90)
+        self.view_A = PixelArrayView(self.spectrum, 0, 30)
+        self.view_C = PixelArrayView(self.spectrum, 30, 60)
+
+        self.segments_A = Command(Command.COMMAND_TYPE_SINGLE_SEGMENT, Command.SECTION_ID_A, bytearray([0, 2, 4, 6]), self.view_A)
+        self.segments_C = Command(Command.COMMAND_TYPE_SINGLE_SEGMENT, Command.SECTION_ID_C, bytearray([0, 2, 4, 6]), self.view_C)
+        
         self.colors = [
             Color.RED, Color.GREEN, Color.BLUE, Color.YELLOW,
-            Color.CYAN, Color.MAGENTA, Color.WHITE, Color.BLACK
+            Color.CYAN, Color.MAGENTA, Color.WHITE
         ]
 
-    def calculate(self, band_levels:bytes) -> None:
-        total_leds = self.segment_A.length + self.segment_C.length
+    def update(self, band_levels: Optional[bytes] = None) -> None:
+        if band_levels is None or len(band_levels) == 0:
+            return
         num_bands = len(band_levels)
-        leds_per_band = total_leds // num_bands
+        leds_per_band = self.spectrum.length // num_bands
         for i, level in enumerate(band_levels):
             pixel = self.colors[i % len(self.colors)].set_intensity(level)
              # Calculate LED start index for this band
             start = i * leds_per_band
             end = start + leds_per_band
             # Set the pixels for this band
-            if start < self.segment_A.length:
-                # Set pixels in segment A
-                if end > self.segment_A.length:
-                    overflow = end - self.segment_A.length
-                    end = self.segment_A.length
-                    self.segment_A.set_pixels(start, end, pixel)
-                    self.segment_C.set_pixels(0, overflow, pixel)
-                else:
-                    self.segment_A.set_pixels(start, end, pixel)
-            else:
-                # Set pixels in segment C
-                start -= self.segment_A.length
-                end -= self.segment_A.length
-                self.segment_C.set_pixels(start, end, pixel)
+            self.spectrum.set_pixels(start, end, pixel)
+    
+    def get_commands(self) -> list[Command]:
+        return [self.segments_A, self.segments_C]
 
 spectrumEffect = SpectrumEffect()
         
