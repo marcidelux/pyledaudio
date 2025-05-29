@@ -6,8 +6,8 @@ MAX_FREQUENCY = 18000
 N_FFT_BINS = 12
 N_ROLLING_HISTORY = 2
 
-""" Set the configuration for the audio visualization."""
-def set_config(config:dict):
+
+def set_config(config: dict):
     global MIC_RATE, MIC_DEVICE_INDEX, FPS, MIN_FREQUENCY, MAX_FREQUENCY, N_FFT_BINS, N_ROLLING_HISTORY
     MIC_RATE = config.get('MIC_RATE', MIC_RATE)
     MIC_DEVICE_INDEX = config.get('MIC_DEVICE_INDEX', MIC_DEVICE_INDEX)

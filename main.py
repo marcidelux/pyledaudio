@@ -4,7 +4,8 @@ from audio import config as audio_config, process
 from effects import config as effects_config
 from effects.effects_manager import effect_manager
 from effects import protocol
-from udp import config as udp_config, udp_client
+from udp import config as udp_config
+from udp.client import udp_client
 from api import server, config as api_config
 
 import numpy as np
@@ -14,15 +15,18 @@ music_turned_off = False
 last_time = time.time()
 switch_time = 10
 
+
 def send_bands_to_client(band_levels: bytes) -> None:
     # Only put data into queue if ready
     if server.broadcast_queue is not None:
         server.broadcast_queue.put_nowait(band_levels)
 
+
 def send_leds_to_client(data: bytes) -> None:
     # Only put data into queue if ready
     if server.leds_broadcast_queue is not None:
         server.leds_broadcast_queue.put_nowait(data)
+
 
 def display_effects(audio_chunk: np.ndarray) -> None:
     global last_time, switch_time
@@ -40,9 +44,10 @@ def display_effects(audio_chunk: np.ndarray) -> None:
         send_bands_to_client(band_levels)
 
     for command in effect.get_commands():
-        send_leds_to_client(command.to_bytes())
-    
-    #udp_client.send_bytes(effects.get_commands()[0].to_bytes())
+        cmd_bytes = command.to_bytes()
+        send_leds_to_client(cmd_bytes)
+        udp_client.send_bytes(cmd_bytes)
+
 
 def init():
     conf_dict = config.get_config_dict()
@@ -52,16 +57,15 @@ def init():
     effects_config.set_config(conf_dict)
     process.init()
     server.start()
-    udp_client.init()
+
 
 if __name__ == "__main__":
     init()
     process.start_stream(display_effects)
-    #static_triangle_effect()
-    #process.start_stream(process_audio_and_send)
-    #test()
-    #static_effects()
-
+    # static_triangle_effect()
+    # process.start_stream(process_audio_and_send)
+    # test()
+    # static_effects()
 
     """
     def process_audio_and_send(audio_chunk: np.ndarray) -> None:

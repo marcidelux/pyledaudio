@@ -6,6 +6,7 @@ from . import dsp
 import numpy as np
 from scipy.ndimage import gaussian_filter1d
 
+
 class ExpFilter:
     def __init__(self, val, alpha_decay=0.5, alpha_rise=0.5):
         self.alpha_decay = alpha_decay
@@ -18,12 +19,14 @@ class ExpFilter:
         self.value += alpha * delta
         return self.value
 
+
 # These will be assigned in init()
 mel_gain = None
 mel_smoothing = None
 y_roll = None
 fft_window = None
 max_volume = None
+
 
 def init():
     global mel_gain, mel_smoothing, y_roll, fft_window, max_volume
@@ -49,6 +52,7 @@ def init():
     fft_window = np.hamming(samples_per_frame * rolling_frames)
 
     max_volume = 0.002
+
 
 def create_band_levels(audio_chunk: np.ndarray) -> bytes | None:
     global y_roll, max_volume
@@ -85,6 +89,7 @@ def create_band_levels(audio_chunk: np.ndarray) -> bytes | None:
     mel = np.clip(mel, 0, 1)
     return bytes((mel * 255).astype(np.uint8))
 
+
 """ 
 Starts an audio stream to capture microphone input and process it in real-time.
 
@@ -100,6 +105,8 @@ Args:
     rate (int): The sampling rate of the microphone in Hz (e.g., 44100 for CD-quality audio).
     fps (int): The refresh rate of the visualization or processing in frames per second.
 """
+
+
 def start_stream(callback):
     p = pyaudio.PyAudio()
     frames_per_buffer = int(config.MIC_RATE / config.FPS)
@@ -113,9 +120,11 @@ def start_stream(callback):
     prev_ovf_time = time.time()
     while True:
         try:
-            y = np.fromstring(stream.read(frames_per_buffer, exception_on_overflow=False), dtype=np.int16)
+            y = np.fromstring(stream.read(frames_per_buffer,
+                              exception_on_overflow=False), dtype=np.int16)
             y = y.astype(np.float32)
-            stream.read(stream.get_read_available(), exception_on_overflow=False)
+            stream.read(stream.get_read_available(),
+                        exception_on_overflow=False)
             callback(y)
         except IOError:
             overflows += 1
@@ -126,6 +135,7 @@ def start_stream(callback):
     stream.close()
     p.terminate()
 
+
 def list_audio_devices():
     p = pyaudio.PyAudio()
     for i in range(p.get_device_count()):
@@ -133,9 +143,10 @@ def list_audio_devices():
         for key, value in info.items():
             print(f"{key}: {value}")
 
+
 if __name__ == "__main__":
     list_audio_devices()
-    
+
     def example_callback(data):
         print("Processing audio data:", data)
 

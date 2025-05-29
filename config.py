@@ -23,5 +23,6 @@ N_ROLLING_HISTORY = 2
 MIN_VOLUME_THRESHOLD = 1e-7
 """No music visualization displayed if recorded audio volume below threshold"""
 
+
 def get_config_dict():
     return {k: v for k, v in globals().items() if k.isupper()}

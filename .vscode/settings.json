@@ -1,0 +1,6 @@
+{
+    "python.defaultInterpreterPath": ".venv/bin/python",
+    "python.formatting.provider": "autopep8",
+    "editor.formatOnSave": true,
+    "python.terminal.activateEnvironment": true
+}

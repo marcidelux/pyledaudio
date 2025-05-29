@@ -17,9 +17,12 @@ leds_broadcast_queue: asyncio.Queue = None
 app.mount("/ui", StaticFiles(directory="page", html=True), name="static")
 
 # Endpoints
+
+
 @app.get("/health")
 def hello():
     return {200: "OK"}
+
 
 @app.websocket("/ws/bands")
 async def bands_ws(websocket: WebSocket):
@@ -31,6 +34,7 @@ async def bands_ws(websocket: WebSocket):
             await asyncio.sleep(0.1)
     except WebSocketDisconnect:
         bands_clients.remove(websocket)
+
 
 @app.websocket("/ws/leds")
 async def leds_ws(websocket: WebSocket):
@@ -47,18 +51,20 @@ async def leds_ws(websocket: WebSocket):
 @app.get("/config")
 def get_config():
     FULL_COLOR_PALETTE = [
-    '#FF0000', '#00FF00', '#0000BB', '#00FF00', '#00FFFF', '#0000FF', '#8B00FF',
-    '#FF1493', '#DC143C', '#FFA500', '#FFD700', '#ADFF2F', '#32CD32', '#008080',
-    '#4682B4', '#1E90FF', '#4169E1', '#4B0082', '#9400D3', '#FF69B4', '#CD5C5C',
-    '#FF4500', '#FF6347', '#FF8C00', '#20B2AA', '#40E0D0', '#7FFF00', '#7CFC00',
-    '#00FA9A', '#00CED1'
+        '#FF0000', '#00FF00', '#0000BB', '#00FF00', '#00FFFF', '#0000FF', '#8B00FF',
+        '#FF1493', '#DC143C', '#FFA500', '#FFD700', '#ADFF2F', '#32CD32', '#008080',
+        '#4682B4', '#1E90FF', '#4169E1', '#4B0082', '#9400D3', '#FF69B4', '#CD5C5C',
+        '#FF4500', '#FF6347', '#FF8C00', '#20B2AA', '#40E0D0', '#7FFF00', '#7CFC00',
+        '#00FA9A', '#00CED1'
     ]
     num_bands = config.N_FFT_BINS
-    colors = FULL_COLOR_PALETTE[:num_bands]  # Select only as many colors as needed
+    # Select only as many colors as needed
+    colors = FULL_COLOR_PALETTE[:num_bands]
     return {
         "num_bands": num_bands,
         "colors": colors
     }
+
 
 async def bands_broadcaster_loop():
     global broadcast_queue
@@ -70,6 +76,7 @@ async def bands_broadcaster_loop():
                 await ws.send_json({"bands": list(bands)})
             except Exception:
                 bands_clients.remove(ws)
+
 
 async def led_broadcaster_loop():
     global leds_broadcast_queue
@@ -83,11 +90,13 @@ async def led_broadcaster_loop():
             except Exception:
                 leds_clients.remove(ws)
 
+
 def start():
     def run():
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
-        uvicorn_config = uvicorn.Config("api.server:app", host=config.SERVER_IP, port=config.SERVER_PORT, log_level="info")
+        uvicorn_config = uvicorn.Config(
+            "api.server:app", host=config.SERVER_IP, port=config.SERVER_PORT, log_level="info")
         server_instance = uvicorn.Server(uvicorn_config)
 
         loop.create_task(bands_broadcaster_loop())
