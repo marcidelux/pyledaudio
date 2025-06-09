@@ -11,7 +11,7 @@ MIC_RATE = 48000
 """Sampling frequency of the microphone in Hz"""
 
 MIC_DEVICE_INDEX = 4
-FPS = 30
+FPS = 12
 MIN_FREQUENCY = 60
 """Frequencies below this value will be removed during audio processing"""
 MAX_FREQUENCY = 18000

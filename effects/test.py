@@ -1,51 +1,114 @@
-from .protocol import Command, Color, section_A, section_B, section_C, cmd_section_A, cmd_section_B, cmd_section_C
-from .effect import Effect
-from typing import Optional
-import time
+import unittest
+from utils import Command, Pixel, PixelArray
 
-class Test(Effect):
-    def __init__(self):
-        self.colors = [
-            Color.RED, Color.GREEN, Color.BLUE, Color.YELLOW,
-            Color.CYAN, Color.MAGENTA, Color.WHITE, Color.BLACK
-        ]
-        self.step_A = 0
-        self.step_B = 0
-        self.step_C = 0
-        self.previous_time = time.time()
-        self.update_speed = 0.05 #seconds
 
-    def demo_full_section_A(self) -> None:
-        section_A.set_all(Color.BLACK)
-        idx = self.step_A % section_A.length
-        section_A.set_pixel(idx, Color.RED)
-        self.step_A += 1
+class TestCommandAddition(unittest.TestCase):
+    def setUp(self):
+        # Create some PixelArray instances for testing
+        self.pixel_array_1 = PixelArray(5)
+        self.pixel_array_1.set_all(Pixel(100, 0, 0))  # Red
 
-    def demo_full_section_B(self) -> None:
-        section_B.set_all(Color.BLACK)
-        idx = self.step_B % section_B.length
-        section_B.set_pixel(idx, Color.GREEN)
-        self.step_B += 1
-    
-    def demo_full_section_C(self) -> None:
-        section_C.set_all(Color.BLACK)
-        idx = self.step_C % section_C.length
-        section_C.set_pixel(idx, Color.BLUE)
-        self.step_C += 1
+        self.pixel_array_2 = PixelArray(5)
+        self.pixel_array_2.set_all(Pixel(100, 150, 20))  # Green
 
-    def update(self, band_levels: Optional[bytes] = None) -> None:
-        current_time = time.time()
-        if current_time - self.previous_time < self.update_speed:
-            return
-        self.demo_full_section_A()
-        self.demo_full_section_B()
-        self.demo_full_section_C()
-    
-    def get_commands(self) -> list[Command]:
-        return [
-            cmd_section_A,
-            cmd_section_B,
-            cmd_section_C
-        ]
+        self.pixel_array_3 = PixelArray(5)
+        self.pixel_array_3.set_all(Pixel(30, 200, 255))  # Blue
 
-testEffects = Test()
+        # Create commands with different types and section IDs
+        self.command_1 = Command(
+            Command.COMMAND_TYPE_FULL_SECTION,
+            Command.SECTION_ID_A,
+            bytearray([0x01, 0x02]),
+            self.pixel_array_1
+        )
+
+        self.command_2 = Command(
+            Command.COMMAND_TYPE_FULL_SECTION,
+            Command.SECTION_ID_A,
+            bytearray([0x03, 0x04]),
+            self.pixel_array_2
+        )
+
+        self.command_3 = Command(
+            Command.COMMAND_TYPE_SINGLE_SEGMENT,
+            Command.SECTION_ID_B,
+            bytearray([0x05]),
+            self.pixel_array_3
+        )
+
+    def test_add_commands_with_same_type_and_section(self):
+        # Add two commands with the same type and section ID
+        result = self.command_1 + self.command_2
+        self.assertEqual(len(result), 1)
+        combined_command = result[0]
+        self.assertEqual(combined_command.type,
+                         Command.COMMAND_TYPE_FULL_SECTION)
+        self.assertEqual(combined_command.section_id, Command.SECTION_ID_A)
+        self.assertEqual(combined_command.segment_ids,
+                         self.command_1.segment_ids)
+        self.assertEqual(combined_command.pixels.length,
+                         self.pixel_array_1.length)
+        self.assertEqual(
+            combined_command.pixels.get_pixel(0),
+            Pixel(255, 255, 0)  # Average of red and green
+        )
+
+    def test_add_commands_with_different_types(self):
+        # Add two commands with different types
+        result = self.command_1 + self.command_3
+        # Cannot combine commands with different types
+        self.assertEqual(len(result), 0)
+
+    def test_add_commands_with_no_shared_segments(self):
+        # Add two commands with no shared segment IDs
+        command_a = Command(
+            Command.COMMAND_TYPE_SINGLE_SEGMENT,
+            Command.SECTION_ID_B,
+            bytearray([0x01]),
+            self.pixel_array_1
+        )
+        command_b = Command(
+            Command.COMMAND_TYPE_SINGLE_SEGMENT,
+            Command.SECTION_ID_B,
+            bytearray([0x02]),
+            self.pixel_array_2
+        )
+        result = command_a + command_b
+        # Both commands are returned separately
+        self.assertEqual(len(result), 2)
+
+    def test_add_commands_with_shared_segments(self):
+        # Add two commands with shared segment IDs
+        command_a = Command(
+            Command.COMMAND_TYPE_SINGLE_SEGMENT,
+            Command.SECTION_ID_B,
+            bytearray([0x01, 0x02]),
+            self.pixel_array_1
+        )
+        command_b = Command(
+            Command.COMMAND_TYPE_SINGLE_SEGMENT,
+            Command.SECTION_ID_B,
+            bytearray([0x02, 0x03]),
+            self.pixel_array_2
+        )
+        result = command_a + command_b
+        print(
+            f"Command A: Type={command_a.type}, Section={command_a.section_id}, Segments={list(command_a.segment_ids)}, Pixels={command_a.pixels}")
+        print(
+            f"Command B: Type={command_b.type}, Section={command_b.section_id}, Segments={list(command_b.segment_ids)}, Pixels={command_b.pixels}")
+        for i, cmd in enumerate(result):
+            print(
+                f"Result Command {i}: Type={cmd.type}, Section={cmd.section_id}, Segments={list(cmd.segment_ids)}, Pixels={cmd.pixels}")
+        # Commands for only A, only B, and shared segments
+        self.assertEqual(len(result), 3)
+        self.assertEqual(result[0].segment_ids, bytearray([0x01]))  # Only in A
+        self.assertEqual(result[1].segment_ids, bytearray([0x03]))  # Only in B
+        self.assertEqual(result[2].segment_ids, bytearray([0x02]))  # Shared
+        self.assertEqual(
+            result[2].pixels.get_pixel(0),
+            Pixel(127, 127, 0)  # Average of red and green
+        )
+
+
+if __name__ == "__main__":
+    unittest.main()

@@ -5,10 +5,11 @@ MIN_FREQUENCY = 60
 MAX_FREQUENCY = 18000
 N_FFT_BINS = 12
 N_ROLLING_HISTORY = 2
+MAX_VOLUME = 0.002
 
 
 def set_config(config: dict):
-    global MIC_RATE, MIC_DEVICE_INDEX, FPS, MIN_FREQUENCY, MAX_FREQUENCY, N_FFT_BINS, N_ROLLING_HISTORY
+    global MIC_RATE, MIC_DEVICE_INDEX, FPS, MIN_FREQUENCY, MAX_FREQUENCY, N_FFT_BINS, N_ROLLING_HISTORY, MAX_VOLUME
     MIC_RATE = config.get('MIC_RATE', MIC_RATE)
     MIC_DEVICE_INDEX = config.get('MIC_DEVICE_INDEX', MIC_DEVICE_INDEX)
     FPS = config.get('FPS', FPS)
@@ -16,6 +17,7 @@ def set_config(config: dict):
     MAX_FREQUENCY = config.get('MAX_FREQUENCY', MAX_FREQUENCY)
     N_FFT_BINS = config.get('N_FFT_BINS', N_FFT_BINS)
     N_ROLLING_HISTORY = config.get('N_ROLLING_HISTORY', N_ROLLING_HISTORY)
+    MAX_VOLUME = config.get('MAX_VOLUME', MAX_VOLUME)
 
     # Print all global variables defined in this file
     print("Current configuration:")
@@ -26,3 +28,4 @@ def set_config(config: dict):
     print(f"MAX_FREQUENCY: {MAX_FREQUENCY}")
     print(f"N_FFT_BINS: {N_FFT_BINS}")
     print(f"N_ROLLING_HISTORY: {N_ROLLING_HISTORY}")
+    print(f"MAX_VOLUME: {MAX_VOLUME}")
