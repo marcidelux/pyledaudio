@@ -32,10 +32,10 @@ class TriangleLines(Effect):
         self.view_C_1 = PixelArrayView(self.triangle, 30, 60)
         self.view_C_2 = PixelArrayView(self.triangle, 90, 60, True)
         self.view_A_2 = PixelArrayView(self.triangle, 150, 30, True)
-        self.view_A_1_index = 0
-        self.view_C_1_index = 0
-        self.view_A_2_index = 4
-        self.view_C_2_index = 4
+        self.view_A_1_index = 2
+        self.view_C_1_index = 2
+        self.view_A_2_index = 6
+        self.view_C_2_index = 6
         self.cmd_A_1 = Command(Command.COMMAND_TYPE_SINGLE_SEGMENT, Command.SECTION_ID_A, bytearray(
             [self.view_A_1_index]), self.view_A_1)
         self.cmd_C_1 = Command(Command.COMMAND_TYPE_SINGLE_SEGMENT, Command.SECTION_ID_C, bytearray(
@@ -53,9 +53,9 @@ class TriangleLines(Effect):
         # Move and draw each line
         new_lines = []
         for line in self.lines:
-            if line.index < self.triangle.length:
+            if line.index < len(self.triangle):
                 for i, color in enumerate(line.colors):
-                    idx = (line.index + i) % self.triangle.length
+                    idx = (line.index + i) % len(self.triangle)
                     self.triangle[idx] = color
                 line.advance()
                 new_lines.append(line)  # keep it alive

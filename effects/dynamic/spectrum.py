@@ -40,7 +40,7 @@ class Spectrum4(Effect):
         if band_levels is None:
             return [self.segments_A, self.segments_C]
         num_bands = len(band_levels)
-        leds_per_band = self.spectrum.length // num_bands
+        leds_per_band = len(self.spectrum) // num_bands
         for i, level in enumerate(band_levels):
             pixel = self.config.colors[i % len(
                 self.config.colors)].set_intensity(level)
@@ -48,7 +48,7 @@ class Spectrum4(Effect):
             start = i * leds_per_band
             end = start + leds_per_band
             # Set the pixels for this band
-            self.spectrum.set_pixels(start, end, pixel)
+            self.spectrum[start:end] = pixel
 
         return [self.segments_A, self.segments_C]
 

@@ -1,6 +1,11 @@
 from .static.traveling_dots import travelingDots
 from .static.triangle_lines import triangleLines
+from .static.bottom_triangles import bottom_triangles
+from .static.side_triangles import side_triangles
+from .static.body_triangles import body_triangles
 from .dynamic.spectrum import spectrum4
+from .dynamic.spectrum_octagon import spectrum_octagon
+from .dynamic.spectrum_triangles import spectrum_triangles
 from .utils import Effect
 
 
@@ -66,11 +71,21 @@ all_effects = {
     travelingDots.config.name: travelingDots,
     triangleLines.config.name: triangleLines,
     spectrum4.config.name: spectrum4,
+    spectrum_octagon.config.name: spectrum_octagon,
+    spectrum_triangles.config.name: spectrum_triangles,
+    bottom_triangles.config.name: bottom_triangles,
+    side_triangles.config.name: side_triangles,
+    body_triangles.config.name: body_triangles
 }
 
-dynamic_names = [spectrum4.config.name]
+dynamic_names = [spectrum4.config.name,
+                 spectrum_octagon.config.name,
+                 spectrum_triangles.config.name]
 static_names = [travelingDots.config.name,
-                triangleLines.config.name]
+                triangleLines.config.name,
+                bottom_triangles.config.name,
+                side_triangles.config.name,
+                body_triangles.config.name]
 
 effect_manager = EffectManager(
     all_effects=all_effects,

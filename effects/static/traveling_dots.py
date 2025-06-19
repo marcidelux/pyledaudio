@@ -42,20 +42,20 @@ class TravelingDots(Effect):
 
     def demo_full_section_A(self) -> None:
         self.section_A.set_all(colors.BLACK)
-        idx = self.step_A % self.section_A.length
-        self.section_A.set_pixel(idx, colors.RED)
+        idx = self.step_A % len(self.section_A)
+        self.section_A[idx] = colors.RED
         self.step_A += 1
 
     def demo_full_section_B(self) -> None:
         self.section_B.set_all(colors.BLACK)
-        idx = self.step_B % self.section_B.length
-        self.section_B.set_pixel(idx, colors.GREEN)
+        idx = self.step_B % len(self.section_B)
+        self.section_B[idx] = colors.GREEN
         self.step_B += 1
 
     def demo_full_section_C(self) -> None:
         self.section_C.set_all(colors.BLACK)
-        idx = self.step_C % self.section_C.length
-        self.section_C.set_pixel(idx, colors.BLUE)
+        idx = self.step_C % len(self.section_C)
+        self.section_C[idx] = colors.BLUE
         self.step_C += 1
 
     def update(self) -> List[Command]:

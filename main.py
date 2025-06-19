@@ -7,7 +7,7 @@ from effects.effects_manager import effect_manager
 from udp import config as udp_config
 from udp.client import udp_client
 from api import server, config as api_config
-from effects.utils import Command
+from effects.utils import merge_command_lists
 
 import numpy as np
 import time
@@ -30,7 +30,8 @@ def send_leds_to_client(data: bytes) -> None:
 
 
 def display_effects(audio_chunk: np.ndarray) -> None:
-    effect = effect_manager.get_current()
+    # effect = effect_manager.get_current()
+    effect = effect_manager.get_effect_by_name("BottomTriangles")
     commands = None
     if effect.is_dynamic:
         band_levels = audioProcessor.create_band_levels(audio_chunk)
@@ -54,58 +55,24 @@ def test_combination(audio_chunk: np.ndarray) -> None:
     commandsA = effectA.update(band_levels)
     commandsB = effectB.update(band_levels)
 
-    for cmd in commandsA:
-        print("cmd A:", cmd)
-    for cmd in commandsB:
-        print("cmd B:", cmd)
-
     # print(f"Commands A: {commandsA}\n, Commands B: {commandsB}")
     commands = merge_command_lists(commandsA, commandsB)
-
-    for cmd in commands:
-        print("cmd merged:", cmd)
 
     if commands is not None:
         for command in commands:
             cmd_bytes = command.to_bytes()
             send_leds_to_client(cmd_bytes)
+
+
             # udp_client.send_bytes(cmd_bytes)
-
-
-def merge_command_lists(a: list[Command], b: list[Command]) -> list[Command]:
-    result: list[Command] = []
-    used_a = set()
-    used_b = set()
-
-    for i, cmd_a in enumerate(a):
-        ids_a = set(cmd_a.segment_ids)
-        for j, cmd_b in enumerate(b):
-            if (i, j) in used_a or (j, i) in used_b:
-                continue
-            if cmd_a.type != cmd_b.type or cmd_a.section_id != cmd_b.section_id:
-                continue
-
-            ids_b = set(cmd_b.segment_ids)
-            shared = ids_a & ids_b
-            if not shared:
-                continue
-
-            combined = cmd_a + cmd_b  # List of 1–3 commands
-            result.extend(combined)
-            used_a.add(i)
-            used_b.add(j)
-
-    # Add remaining commands from A
-    for i, cmd in enumerate(a):
-        if i not in used_a:
-            result.append(cmd)
-
-    # Add remaining commands from B
-    for j, cmd in enumerate(b):
-        if j not in used_b:
-            result.append(cmd)
-
-    return result
+"""
+    for cmd in commandsA:
+        print("cmd A:", cmd)
+    for cmd in commandsB:
+        print("cmd B:", cmd)
+    for cmd in commands:
+        print("cmd merged:", cmd)
+"""
 
 
 def init():
@@ -114,7 +81,7 @@ def init():
     udp_config.set_config(conf_dict)
     api_config.set_config(conf_dict)
     effects_config.set_config(conf_dict)
-    audioProcessor.init(test_combination)
+    audioProcessor.init(display_effects)
     server.start()
 
 
