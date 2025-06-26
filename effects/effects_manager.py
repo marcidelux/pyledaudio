@@ -6,6 +6,7 @@ from .static.body_triangles import body_triangles
 from .dynamic.spectrum import spectrum4
 from .dynamic.spectrum_octagon import spectrum_octagon
 from .dynamic.spectrum_triangles import spectrum_triangles
+from .dynamic.beat_blast import beat_blast
 from .utils import Effect
 
 
@@ -75,12 +76,14 @@ all_effects = {
     spectrum_triangles.config.name: spectrum_triangles,
     bottom_triangles.config.name: bottom_triangles,
     side_triangles.config.name: side_triangles,
-    body_triangles.config.name: body_triangles
+    body_triangles.config.name: body_triangles,
+    beat_blast.config.name: beat_blast
 }
 
 dynamic_names = [spectrum4.config.name,
                  spectrum_octagon.config.name,
-                 spectrum_triangles.config.name]
+                 spectrum_triangles.config.name,
+                 beat_blast.config.name]
 static_names = [travelingDots.config.name,
                 triangleLines.config.name,
                 bottom_triangles.config.name,

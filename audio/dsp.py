@@ -42,7 +42,7 @@ def fft(data, window=None):
 def create_mel_bank():
     global samples, mel_y, mel_x
     samples = int(config.MIC_RATE *
-                  config.N_ROLLING_HISTORY / (2.0 * config.FPS))
+                  config.N_ROLLING_HISTORY / (2.0 * config.SAMPLING_FREQUENCY))
     mel_y, (_, mel_x) = melbank.compute_melmat(num_mel_bands=config.N_FFT_BINS,
                                                freq_min=config.MIN_FREQUENCY,
                                                freq_max=config.MAX_FREQUENCY,

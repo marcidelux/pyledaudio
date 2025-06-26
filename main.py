@@ -1,7 +1,7 @@
 import config
 
 from audio import config as audio_config
-from audio.process import audioProcessor
+from audio.process import audioProcessor, AudioInfo
 from effects import config as effects_config
 from effects.effects_manager import effect_manager
 from udp import config as udp_config
@@ -29,16 +29,43 @@ def send_leds_to_client(data: bytes) -> None:
         server.leds_broadcast_queue.put_nowait(data)
 
 
-def display_effects(audio_chunk: np.ndarray) -> None:
-    # effect = effect_manager.get_current()
-    effect = effect_manager.get_effect_by_name("BottomTriangles")
+effect = effect_manager.get_effect_by_name("SpectrumOctagon")
+effect2 = effect_manager.get_effect_by_name("BeatBlast")
+# effect = effect_manager.get_effect_by_name("Spectrum4")
+# effect = effect_manager.get_effect_by_name("BottomTriangles")
+fpscntr = 0
+last_time = time.time()
+
+
+def count_fps() -> None:
+    global fpscntr, last_time
+    current_time = time.time()
+    if current_time - last_time >= 1:
+        print(f"FPS: {fpscntr}")
+        fpscntr = 0
+        last_time = current_time
+    else:
+        fpscntr += 1
+
+
+def display_bands(audio_chunk: np.ndarray) -> None:
+    # count_fps()
+    band_levels = audioProcessor.create_band_levels(audio_chunk)
+    if band_levels == None:
+        return
+    send_bands_to_client(band_levels)
+
+
+def display_effects(audio_info: AudioInfo) -> None:
+    global effect
+    count_fps()
     commands = None
     if effect.is_dynamic:
-        band_levels = audioProcessor.create_band_levels(audio_chunk)
-        if band_levels == None:
+        # band_levels = audioProcessor.create_band_levels(audio_chunk)
+        if audio_info.bands == None:
             return
-        send_bands_to_client(band_levels)
-        commands = effect.update(band_levels)
+        send_bands_to_client(audio_info.bands)
+        commands = effect.update(audio_info)
     else:
         commands = effect.update()
     if commands is not None:
@@ -48,31 +75,22 @@ def display_effects(audio_chunk: np.ndarray) -> None:
             # udp_client.send_bytes(cmd_bytes)
 
 
-def test_combination(audio_chunk: np.ndarray) -> None:
-    band_levels = audioProcessor.create_band_levels(audio_chunk)
-    effectA = effect_manager.get_effect_by_name("TriangleLines")
-    effectB = effect_manager.get_effect_by_name("Spectrum4")
-    commandsA = effectA.update(band_levels)
-    commandsB = effectB.update(band_levels)
+def test_two_pyramids(audio_info: AudioInfo) -> None:
+    global effect, effect2
+    count_fps()
+    commands = None
+    if audio_info.bands is None:
+        return
 
-    # print(f"Commands A: {commandsA}\n, Commands B: {commandsB}")
-    commands = merge_command_lists(commandsA, commandsB)
+    effect.update(audio_info)
+    effect2.update(audio_info)
+
+    commands = effect.pyramid.combine(effect2.pyramid)
 
     if commands is not None:
         for command in commands:
             cmd_bytes = command.to_bytes()
             send_leds_to_client(cmd_bytes)
-
-
-            # udp_client.send_bytes(cmd_bytes)
-"""
-    for cmd in commandsA:
-        print("cmd A:", cmd)
-    for cmd in commandsB:
-        print("cmd B:", cmd)
-    for cmd in commands:
-        print("cmd merged:", cmd)
-"""
 
 
 def init():
@@ -81,7 +99,7 @@ def init():
     udp_config.set_config(conf_dict)
     api_config.set_config(conf_dict)
     effects_config.set_config(conf_dict)
-    audioProcessor.init(display_effects)
+    audioProcessor.setup(test_two_pyramids)
     server.start()
 
 

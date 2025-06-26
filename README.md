@@ -18,4 +18,3 @@ Interactive web interface: Monitor audio bands, check system health, and control
 Backend: Python, FastAPI, PyAudio, NumPy, SciPy, Uvicorn
 Frontend: HTML/CSS, JavaScript, Chart.js, WebSockets
 Hardware: Compatible with Raspberry Pi and WS2812 (NeoPixel) LED strips
-

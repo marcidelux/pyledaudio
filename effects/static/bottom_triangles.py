@@ -29,41 +29,41 @@ class BottomTriangles(Effect):
         )
         self.pyramid = DigitalPyramid()
         self.previous_time = time.time()
-        self.spawn_time = 0.5
-        self.time_count_up = 0
+        self.previous_spawn_time = self.previous_time
+        self.spawn_time = 1
 
     def update(self) -> List[Command] | None:
-        if time.time() - self.previous_time < self.config.update_speed:
-            return None
-        self.previous_time = time.time()
-        self.time_count_up += self.config.update_speed
+        current_time = time.time()
 
-        if self.time_count_up >= self.spawn_time:
-            self.time_count_up = 0
+        if current_time - self.previous_time < self.config.update_speed:
+            return None
+
+        if current_time >= self.previous_spawn_time + self.spawn_time:
+            self.previous_spawn_time = current_time
             particle1 = Particle(
                 color=self.config.colors[0],
                 position=0,
                 direction=1,
                 lifetime=7.0,
-                update_speed=0.05,
+                update_speed=0.1,
                 speed=1,
-                time_of_creation=self.previous_time
+                time_of_creation=current_time
             )
-            self.pyramid.lines_A[0].add_particle(particle1)
-
-            particle3 = Particle(
-                color=self.config.colors[2],
-                position=0,
+            particle2 = Particle(
+                color=self.config.colors[1],
+                position=1,
                 direction=1,
                 lifetime=7.0,
-                update_speed=0.05,
+                update_speed=0.03,
                 speed=2,
-                time_of_creation=self.previous_time
+                time_of_creation=current_time
             )
-            self.pyramid.lines_A[0].add_particle(particle3)
+            self.pyramid.lines_A[0].add_particle(particle1)
+            # self.pyramid.lines_A[0].add_particle(particle2)
 
         self.pyramid.update(self.previous_time)
 
+        self.previous_time = current_time
         return [self.pyramid.cmd_A, self.pyramid.cmd_B, self.pyramid.cmd_C]
 
 

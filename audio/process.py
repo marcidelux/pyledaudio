@@ -1,10 +1,18 @@
-import time
-import threading
 import numpy as np
 import pyaudio
+import aubio
+import time
+from dataclasses import dataclass
 from scipy.ndimage import gaussian_filter1d
 from . import config
 from . import dsp
+
+
+@dataclass
+class AudioInfo:
+    bands: bytes | None = None
+    beat_detected: bool = False
+    bpm: float = 0.0
 
 
 class ExpFilter:
@@ -24,10 +32,12 @@ class AudioProcessor:
     def __init__(self):
         self.callback = None
         self._pyaudio = pyaudio.PyAudio()
+        self._aubio_tempo = None
         self._stream = None
-        self._thread = None
-        self._running = False
-        self._overflows = 0
+        self._frames_per_buffer = 0
+        self._is_beat = False
+        self._display_cntr = 0
+        self._display_cntr_limit = config.SAMPLING_FREQUENCY / config.DISPLAY_FREQUENCY
 
         # Internal state
         self.mel_gain = None
@@ -36,7 +46,7 @@ class AudioProcessor:
         self.fft_window = None
         self.max_volume = 0
 
-    def init(self, callback):
+    def setup(self, callback):
         dsp.create_mel_bank()
 
         self.callback = callback
@@ -53,13 +63,48 @@ class AudioProcessor:
             alpha_rise=0.8
         )
 
-        samples_per_frame = int(config.MIC_RATE / config.FPS)
+        self._frames_per_buffer = int(
+            config.MIC_RATE / config.SAMPLING_FREQUENCY)
+        win_size = 512
+
         rolling_frames = config.N_ROLLING_HISTORY
-
-        self.y_roll = np.random.rand(rolling_frames, samples_per_frame) / 1e16
-        self.fft_window = np.hamming(samples_per_frame * rolling_frames)
-
+        self.y_roll = np.random.rand(
+            rolling_frames, self._frames_per_buffer) / 1e16
+        self.fft_window = np.hamming(self._frames_per_buffer * rolling_frames)
         self.max_volume = config.MAX_VOLUME
+
+        self._aubio_tempo = aubio.tempo(
+            "default",
+            win_size,
+            self._frames_per_buffer,
+            config.MIC_RATE
+        )
+
+    def _pyaudio_callback(self, in_data, frame_count, time_info, status):
+        y = np.frombuffer(in_data, dtype=np.int16).astype(np.float32)
+
+        float_data = y / 2.0**15
+        bpm = self._aubio_tempo.get_bpm()
+        if self._aubio_tempo(float_data)[0] > 0.0:
+            self._is_beat = True
+            print("Beat detected at", time.time())
+            print(f"BPM: {bpm}")
+
+        self._display_cntr += 1
+
+        if self._display_cntr >= self._display_cntr_limit:
+            self._display_cntr = 0
+            bands = self.create_band_levels(y)
+            audio_info = AudioInfo(
+                bands=bands,
+                beat_detected=self._is_beat,
+                bpm=bpm
+            )
+            self._is_beat = False
+            if self.callback:
+                self.callback(audio_info)
+
+        return (None, pyaudio.paContinue)
 
     def create_band_levels(self, audio_chunk: np.ndarray) -> bytes | None:
         y = audio_chunk / 2.0**15
@@ -88,48 +133,24 @@ class AudioProcessor:
         mel = np.clip(mel, 0, 1)
         return bytes((mel * 255).astype(np.uint8))
 
-    def _stream_loop(self):
-        frames_per_buffer = int(config.MIC_RATE / config.FPS)
+    def start(self):
         self._stream = self._pyaudio.open(
             format=pyaudio.paInt16,
             channels=1,
             rate=config.MIC_RATE,
             input=True,
-            frames_per_buffer=frames_per_buffer,
-            input_device_index=config.MIC_DEVICE_INDEX
+            frames_per_buffer=self._frames_per_buffer,
+            input_device_index=config.MIC_DEVICE_INDEX,
+            # <-- This is where PyAudio gets the stream callback
+            stream_callback=self._pyaudio_callback
         )
-        prev_ovf_time = time.time()
-
-        while self._running:
-            try:
-                y = np.frombuffer(
-                    self._stream.read(frames_per_buffer,
-                                      exception_on_overflow=False),
-                    dtype=np.int16
-                ).astype(np.float32)
-                self._stream.read(
-                    self._stream.get_read_available(), exception_on_overflow=False)
-                self.callback(y)
-            except IOError:
-                self._overflows += 1
-                if time.time() > prev_ovf_time + 1:
-                    prev_ovf_time = time.time()
-                    print(
-                        f'Audio buffer has overflowed {self._overflows} times')
-
-    def start(self):
-        self._running = True
-        self._thread = threading.Thread(target=self._stream_loop, daemon=True)
-        self._thread.start()
+        self._stream.start_stream()
 
     def stop(self):
-        self._running = False
-        if self._thread:
-            self._thread.join()
         if self._stream:
             self._stream.stop_stream()
             self._stream.close()
-        self._stream = None
+            self._stream = None
 
     def terminate(self):
         self.stop()

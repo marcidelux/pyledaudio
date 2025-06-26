@@ -9,6 +9,13 @@ from time import time
 
 
 @dataclass
+class AudioInfo:
+    bands: bytes | None = None
+    beat_detected: bool = False
+    bpm: float = 0.0
+
+
+@dataclass
 class Pixel:
     r: uint8
     g: uint8
@@ -240,8 +247,7 @@ class Particle:
 
         if time_passed >= self.update_speed:
             self.position += self.step
-
-        self._last_update = current_time
+            self._last_update = current_time
 
     def is_alive(self) -> bool:
         return self.lifetime > 0
@@ -263,6 +269,12 @@ class Particle:
             speed=self.speed
         )
 
+    def __repr__(self):
+        return (f"Particle(color={self.color}, position={self.position}, "
+                f"direction={self.direction}, speed={self.speed}, "
+                f"lifetime={self.lifetime:.2f}, "
+                f"update_speed={self.update_speed:.2f})")
+
 
 class ParticleLine:
     def __init__(self, view: PixelArrayView):
@@ -272,6 +284,9 @@ class ParticleLine:
                                            Literal["head", "tail"]]] = []
         self._connections_tail: List[Tuple['ParticleLine',
                                            Literal["head", "tail"]]] = []
+
+    def __len__(self):
+        return len(self.view)
 
     def add_connection_to_head(self, other: Tuple['ParticleLine', Literal["head", "tail"]]):
         if other not in self._connections_head:
@@ -297,10 +312,39 @@ class ParticleLine:
         if other in self._connections_tail:
             self._connections_tail.remove(other)
 
+    def remove_all_connections(self):
+        self._connections_head.clear()
+        self._connections_tail.clear()
+
     def add_connection(self, from_end: Literal["head", "tail"], target: Tuple['ParticleLine', Literal["head", "tail"]]):
         connections = self._connections_head if from_end == "head" else self._connections_tail
         if target not in connections:
             connections.append(target)
+
+    def set_intensity(self, intensity: uint8):
+        for particle in self.particles:
+            particle.color = particle.color.set_intensity(intensity)
+
+    def transfer_particle(self, particle: Particle, target_line: 'ParticleLine', target_end: Literal["head", "tail"], from_head: bool):
+        if target_end == "head":
+            direction = 1
+        else:
+            direction = -1
+
+        if from_head:
+            if target_end == "head":
+                new_position = abs(particle.position) - 1
+            else:
+                new_position = len(target_line) + particle.position
+        else:
+            if target_end == "head":
+                new_position = particle.position - len(self)
+            else:
+                new_position = len(target_line) + \
+                    len(self) - particle.position - 1
+
+        new_particle = particle.clone(new_position, direction)
+        target_line.add_particle(new_particle)
 
     def update(self, current_time: float = time()):
         self.view[:] = Colors.BLACK
@@ -312,26 +356,18 @@ class ParticleLine:
             if not p.is_alive():
                 continue
 
+            # Particle exited through head
             if p.position < 0:
-                # Particle exited through head
                 for target_line, target_end in self._connections_head:
-                    if target_end == "head":
-                        new_p = p.clone(position=0, direction=1)
-                    else:
-                        new_p = p.clone(position=len(
-                            target_line.view) - 1, direction=-1)
-                    target_line.particles.append(new_p)
+                    self.transfer_particle(
+                        p, target_line, target_end, from_head=True)
                 continue  # Don't keep the original particle
 
+            # Particle exited through tail
             elif p.position >= len(self.view):
-                # Particle exited through tail
                 for target_line, target_end in self._connections_tail:
-                    if target_end == "head":
-                        new_p = p.clone(position=0, direction=1)
-                    else:
-                        new_p = p.clone(position=len(
-                            target_line.view) - 1, direction=-1)
-                    target_line.particles.append(new_p)
+                    self.transfer_particle(
+                        p, target_line, target_end, from_head=False)
                 continue  # Don't keep the original particle
 
             # Within bounds — render it
@@ -346,6 +382,42 @@ class ParticleLine:
 
     def add_particle(self, particle: Particle):
         self.particles.append(particle)
+
+
+class ParticleLineGroup:
+    def __init__(self,):
+        self.lines: List[ParticleLine] = []
+
+    def append(self, line: ParticleLine):
+        self.lines.append(line)
+
+    def __getitem__(self, index: int) -> ParticleLine:
+        return self.lines[index]
+
+    def __setitem__(self, index: int, value: ParticleLine):
+        if not isinstance(value, ParticleLine):
+            raise TypeError("Value must be a ParticleLine instance")
+        self.lines[index] = value
+
+    def __len__(self):
+        return len(self.lines)
+
+    def add_particle(self, particle: Particle):
+        if not self.lines:
+            raise ValueError(
+                "No ParticleLines in the group to add a particle to.")
+        # Add the particle to the first line by default
+        for line in self.lines:
+            if particle.position < len(line):
+                line.add_particle(particle)
+
+    def update(self, current_time: float = time()):
+        for line in self.lines:
+            line.update(current_time)
+
+    def set_intensity(self, intensity: uint8):
+        for line in self.lines:
+            line.set_intensity(intensity)
 
 
 class Command:
@@ -494,10 +566,6 @@ class Command:
     def __repr__(self):
         return f"Command(type={self.type}, section_id={self.section_id}, segment_ids={self.segment_ids}, pixels={self.pixels})"
 
-# A1 (1,2), A2 (3,4)
-# B1 (2,7), B2 (3,4,5)
-# C1: A1-1, C2: B1-7, C3: B2-5, C4 (A1:2 + B1:2), C5: (A2:3 + B2:3, A2:4 + B2:4)
-
 
 def merge_command_lists(a: list[Command], b: list[Command]) -> list[Command]:
     merged_pairs: list[tuple[Command, Command]] = []
@@ -533,23 +601,24 @@ class DigitalPyramid:
         self.section_B = PixelArray(Command.SECTION_LEN_B)
         self.section_C = PixelArray(Command.SECTION_LEN_C)
 
+        self.lines_A: ParticleLineGroup = ParticleLineGroup()
+        self.lines_B: ParticleLineGroup = ParticleLineGroup()
+        self.lines_C: ParticleLineGroup = ParticleLineGroup()
+
         self.segments_A: List[PixelArrayView] = []
-        self.lines_A: List[ParticleLine] = []
+        self.segments_B: List[PixelArrayView] = []
+        self.segments_C: List[PixelArrayView] = []
+
         for i in range(8):
+            # Create segments and lines for each section
             self.segments_A.append(PixelArrayView(
                 self.section_A, i * Command.SEGMENT_LEN_A, Command.SEGMENT_LEN_A))
             self.lines_A.append(ParticleLine(self.segments_A[i]))
-
-        self.segments_B: List[PixelArrayView] = []
-        self.lines_B: List[ParticleLine] = []
-        for i in range(8):
+            # Create segments and lines for section B
             self.segments_B.append(PixelArrayView(
                 self.section_B, i * Command.SEGMENT_LEN_B, Command.SEGMENT_LEN_B))
             self.lines_B.append(ParticleLine(self.segments_B[i]))
-
-        self.segments_C: List[PixelArrayView] = []
-        self.lines_C: List[ParticleLine] = []
-        for i in range(8):
+            # Create segments and lines for section C
             self.segments_C.append(PixelArrayView(
                 self.section_C, i * Command.SEGMENT_LEN_C, Command.SEGMENT_LEN_C))
             self.lines_C.append(ParticleLine(self.segments_C[i]))
@@ -666,108 +735,8 @@ class DigitalPyramid:
                 (self.segments_C[3], False),
                 (self.segments_C[7], True),
                 (self.segments_A[7], True),
-            ),
-            PixelGroup(
-                (self.segments_A[4], False),
-                (self.segments_C[4], False),
-                (self.segments_C[0], True),
-                (self.segments_A[0], True),
-            ),
-            PixelGroup(
-                (self.segments_A[5], False),
-                (self.segments_C[5], False),
-                (self.segments_C[1], True),
-                (self.segments_A[1], True),
-            ),
-            PixelGroup(
-                (self.segments_A[6], False),
-                (self.segments_C[6], False),
-                (self.segments_C[2], True),
-                (self.segments_A[2], True),
-            ),
-            PixelGroup(
-                (self.segments_A[7], False),
-                (self.segments_C[7], False),
-                (self.segments_C[3], True),
-                (self.segments_A[3], True),
-            ),
+            )
         ]
-
-        self.body_tetrahedron_groups: List[PixelGroup] = [
-            PixelGroup(
-                (self.segments_A[0], False),
-                (self.segments_C[0], False),
-                (self.segments_C[1], True),
-                (self.segments_B[0], True),
-                (self.segments_A[1], True),
-            ),
-            PixelGroup(
-                (self.segments_A[1], False),
-                (self.segments_C[1], False),
-                (self.segments_C[2], True),
-                (self.segments_B[1], True),
-                (self.segments_A[2], True),
-            ),
-            PixelGroup(
-                (self.segments_A[2], False),
-                (self.segments_C[2], False),
-                (self.segments_C[3], True),
-                (self.segments_B[2], True),
-                (self.segments_A[3], True),
-            ),
-            PixelGroup(
-                (self.segments_A[3], False),
-                (self.segments_C[3], False),
-                (self.segments_C[4], True),
-                (self.segments_B[3], True),
-                (self.segments_A[4], True),
-            ),
-            PixelGroup(
-                (self.segments_A[4], False),
-                (self.segments_C[4], False),
-                (self.segments_C[5], True),
-                (self.segments_B[4], True),
-                (self.segments_A[5], True),
-            ),
-            PixelGroup(
-                (self.segments_A[5], False),
-                (self.segments_C[5], False),
-                (self.segments_C[6], True),
-                (self.segments_B[5], True),
-                (self.segments_A[6], True),
-            ),
-            PixelGroup(
-                (self.segments_A[6], False),
-                (self.segments_C[6], False),
-                (self.segments_C[7], True),
-                (self.segments_B[6], True),
-                (self.segments_A[7], True),
-            ),
-            PixelGroup(
-                (self.segments_A[7], False),
-                (self.segments_C[7], False),
-                (self.segments_C[0], True),
-                (self.segments_B[7], True),
-                (self.segments_A[0], True),
-            ),
-        ]
-
-        self.lines_A[0].add_connections_to_tail([
-            (self.lines_B[0], "head"),
-            (self.lines_B[7], "tail"),
-            (self.lines_C[0], "hea1d")
-        ])
-
-        self.lines_B[0].add_connections_to_tail([
-            (self.lines_A[1], "tail"),
-            (self.lines_B[1], "head"),
-            (self.lines_C[1], "head")
-        ])
-        self.lines_B[7].add_connections_to_head([
-            (self.lines_A[7], "tail"),
-            (self.lines_B[6], "tail"),
-            (self.lines_C[7], "head")
-        ])
 
         self.cmd_A = Command(Command.COMMAND_TYPE_FULL_SECTION,
                              Command.SECTION_ID_A, bytearray(), self.section_A)
@@ -776,13 +745,29 @@ class DigitalPyramid:
         self.cmd_C = Command(Command.COMMAND_TYPE_FULL_SECTION,
                              Command.SECTION_ID_C, bytearray(), self.section_C)
 
+        self.cmds: List[Command] = [self.cmd_A, self.cmd_B, self.cmd_C]
+
     def update(self, update_time: float = time()):
-        for line in self.lines_A:
-            line.update(update_time)
-        for line in self.lines_B:
-            line.update(update_time)
-        for line in self.lines_C:
-            line.update(update_time)
+        self.lines_A.update(update_time)
+        self.lines_B.update(update_time)
+        self.lines_C.update(update_time)
+
+    def clear(self):
+        self.section_A.set_all(colors.BLACK)
+        self.section_B.set_all(colors.BLACK)
+        self.section_C.set_all(colors.BLACK)
+
+    def combine(self, other: 'DigitalPyramid') -> List[Command]:
+        if not isinstance(other, DigitalPyramid):
+            raise ValueError(
+                "Can only combine with another DigitalPyramid instance")
+
+        # Combine sections A, B, and C
+        self.section_A += other.section_A
+        self.section_B += other.section_B
+        self.section_C += other.section_C
+
+        return self.cmds
 
 
 class Effect(ABC):
@@ -820,7 +805,7 @@ class Effect(ABC):
 
     """Calculate the effect based on the provided band levels."""
     @abstractmethod
-    def update(self, band_levels: Optional[bytes] = None) -> List[Command]:
+    def update(self, audio_info: Optional[AudioInfo] = None) -> List[Command]:
         pass
 
 

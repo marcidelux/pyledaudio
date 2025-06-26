@@ -6,7 +6,8 @@ from ..utils import (
     PixelArray,
     PixelArrayView,
     colors,
-    Pixel
+    Pixel,
+    AudioInfo
 )
 
 
@@ -36,12 +37,12 @@ class Spectrum4(Effect):
         self.segments_C = Command(Command.COMMAND_TYPE_SINGLE_SEGMENT,
                                   Command.SECTION_ID_C, bytearray([0, 2, 4, 6]), self.view_C)
 
-    def update(self, band_levels: Optional[bytes] = None) -> List[Command]:
-        if band_levels is None:
+    def update(self, audio_info: Optional[AudioInfo] = None) -> List[Command]:
+        if audio_info is None:
             return [self.segments_A, self.segments_C]
-        num_bands = len(band_levels)
+        num_bands = len(audio_info.bands)
         leds_per_band = len(self.spectrum) // num_bands
-        for i, level in enumerate(band_levels):
+        for i, level in enumerate(audio_info.bands):
             pixel = self.config.colors[i % len(
                 self.config.colors)].set_intensity(level)
             # Calculate LED start index for this band
