@@ -10,14 +10,14 @@ SERVER_PORT = 9999
 MIC_RATE = 48000
 """Sampling frequency of the microphone in Hz"""
 
-MIC_DEVICE_INDEX = 4
+MIC_DEVICE_INDEX = 9
 MIN_FREQUENCY = 60
 """Frequencies below this value will be removed during audio processing"""
 MAX_FREQUENCY = 18000
 """Frequencies above this value will be removed during audio processing"""
 
-SAMPLING_FREQUENCY = 256
-DISPLAY_FREQUENCY = 32
+SAMPLING_FREQUENCY = 300
+DISPLAY_FREQUENCY = 30
 
 N_FFT_BINS = 8
 """Number of frequency bins to use when transforming audio to frequency domain"""

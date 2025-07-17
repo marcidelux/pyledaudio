@@ -37,7 +37,7 @@ class AudioProcessor:
         self._frames_per_buffer = 0
         self._is_beat = False
         self._display_cntr = 0
-        self._display_cntr_limit = config.SAMPLING_FREQUENCY / config.DISPLAY_FREQUENCY
+        self._display_cntr_limit = 0
 
         # Internal state
         self.mel_gain = None
@@ -80,19 +80,23 @@ class AudioProcessor:
             config.MIC_RATE
         )
 
+        self._display_cntr_limit = config.SAMPLING_FREQUENCY / config.DISPLAY_FREQUENCY
+
     def _pyaudio_callback(self, in_data, frame_count, time_info, status):
+        # self.print_fps("audio")
         y = np.frombuffer(in_data, dtype=np.int16).astype(np.float32)
 
         float_data = y / 2.0**15
         bpm = self._aubio_tempo.get_bpm()
         if self._aubio_tempo(float_data)[0] > 0.0:
             self._is_beat = True
-            print("Beat detected at", time.time())
-            print(f"BPM: {bpm}")
+            # print("Beat detected at", time.time())
+            # print(f"BPM: {bpm}")
 
         self._display_cntr += 1
 
         if self._display_cntr >= self._display_cntr_limit:
+            # self.print_fps("display")
             self._display_cntr = 0
             bands = self.create_band_levels(y)
             audio_info = AudioInfo(
@@ -155,6 +159,23 @@ class AudioProcessor:
     def terminate(self):
         self.stop()
         self._pyaudio.terminate()
+
+    def print_fps(self, job: str):
+        current_time = time.time()
+        last_time_attr = job + '_last_time'
+        fps_cntr_attr = job + '_fps_cntr'
+
+        if not hasattr(self, last_time_attr):
+            setattr(self, last_time_attr, current_time)
+            setattr(self, fps_cntr_attr, 0)
+            return
+
+        if current_time - getattr(self, last_time_attr) >= 1.0:
+            print(f"FPS {job}: {getattr(self, fps_cntr_attr)}")
+            setattr(self, fps_cntr_attr, 0)
+            setattr(self, last_time_attr, current_time)
+        else:
+            setattr(self, fps_cntr_attr, getattr(self, fps_cntr_attr) + 1)
 
     @staticmethod
     def list_audio_devices():

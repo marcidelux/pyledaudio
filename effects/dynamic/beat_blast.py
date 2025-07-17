@@ -8,7 +8,8 @@ from ..utils import (
     colors,
     Pixel,
     AudioInfo,
-    Particle
+    Particle,
+    EndType
 )
 
 
@@ -31,38 +32,38 @@ class BeatBlast(Effect):
         self.pyramid = DigitalPyramid()
         self.previous_time = time.time()
 
-        self.pyramid.lines_A[0].add_connections_to_tail([
-            (self.pyramid.lines_B[0], "head"),
-            (self.pyramid.lines_C[0], "head"),
-            (self.pyramid.lines_B[7], "tail"),
+        self.pyramid.lines_A[0].gate_tail.append([
+            (self.pyramid.lines_B[1], EndType.HEAD),
+            (self.pyramid.lines_C[0], EndType.HEAD),
+            (self.pyramid.lines_B[7], EndType.TAIL),
         ])
 
-        self.pyramid.lines_B[0].add_connections_to_tail([
-            (self.pyramid.lines_C[1], "head"),
-            (self.pyramid.lines_B[1], "head"),
+        self.pyramid.lines_B[0].gate_tail.append([
+            (self.pyramid.lines_C[1], EndType.HEAD),
+            (self.pyramid.lines_B[1], EndType.HEAD),
         ])
 
-        self.pyramid.lines_B[7].add_connections_to_head([
-            (self.pyramid.lines_C[7], "head"),
-            (self.pyramid.lines_B[6], "tail"),
+        self.pyramid.lines_B[7].gate_head.append([
+            (self.pyramid.lines_C[7], EndType.HEAD),
+            (self.pyramid.lines_B[6], EndType.TAIL),
         ])
 
         # other side
 
-        self.pyramid.lines_A[4].add_connections_to_tail([
-            (self.pyramid.lines_B[4], "head"),
-            (self.pyramid.lines_C[4], "head"),
-            (self.pyramid.lines_B[3], "tail"),
+        self.pyramid.lines_A[4].gate_tail.append([
+            (self.pyramid.lines_B[4], EndType.HEAD),
+            (self.pyramid.lines_C[4], EndType.HEAD),
+            (self.pyramid.lines_B[3], EndType.TAIL),
         ])
 
-        self.pyramid.lines_B[4].add_connections_to_tail([
-            (self.pyramid.lines_C[5], "head"),
-            (self.pyramid.lines_B[5], "head"),
+        self.pyramid.lines_B[4].gate_tail.append([
+            (self.pyramid.lines_C[5], EndType.HEAD),
+            (self.pyramid.lines_B[5], EndType.HEAD),
         ])
 
-        self.pyramid.lines_B[3].add_connections_to_head([
-            (self.pyramid.lines_C[3], "head"),
-            (self.pyramid.lines_B[2], "tail"),
+        self.pyramid.lines_B[3].gate_head.append([
+            (self.pyramid.lines_C[3], EndType.HEAD),
+            (self.pyramid.lines_B[2], EndType.TAIL),
         ])
 
     def update(self, audio_info: Optional[AudioInfo] = None) -> List[Command] | None:
@@ -71,7 +72,6 @@ class BeatBlast(Effect):
         if audio_info.beat_detected:
             # print("spawn beat particle", current_time)
             lifetime = 60 / audio_info.bpm
-            print(f"Beat detected! Lifetime: {lifetime:.2f} seconds")
             if lifetime > 1:
                 lifetime = 1
             else:
@@ -84,7 +84,7 @@ class BeatBlast(Effect):
                 lifetime=lifetime,
                 update_speed=0.03,
                 speed=1,
-                time_of_creation=current_time
+                time_of_creation=current_time,
             )
             particle2 = Particle(
                 color=self.config.colors[1],
@@ -93,7 +93,7 @@ class BeatBlast(Effect):
                 lifetime=lifetime,
                 update_speed=0.03,
                 speed=1,
-                time_of_creation=current_time
+                time_of_creation=current_time,
             )
 
             self.pyramid.lines_A.add_particle(particle1)

@@ -4,10 +4,11 @@ from audio import config as audio_config
 from audio.process import audioProcessor, AudioInfo
 from effects import config as effects_config
 from effects.effects_manager import effect_manager
+from effects.utils import cmd_turn_off
 from udp import config as udp_config
 from udp.client import udp_client
 from api import server, config as api_config
-from effects.utils import merge_command_lists
+from state import state_manager
 
 import numpy as np
 import time
@@ -29,10 +30,6 @@ def send_leds_to_client(data: bytes) -> None:
         server.leds_broadcast_queue.put_nowait(data)
 
 
-effect = effect_manager.get_effect_by_name("SpectrumOctagon")
-effect2 = effect_manager.get_effect_by_name("BeatBlast")
-# effect = effect_manager.get_effect_by_name("Spectrum4")
-# effect = effect_manager.get_effect_by_name("BottomTriangles")
 fpscntr = 0
 last_time = time.time()
 
@@ -57,8 +54,9 @@ def display_bands(audio_chunk: np.ndarray) -> None:
 
 
 def display_effects(audio_info: AudioInfo) -> None:
-    global effect
-    count_fps()
+    effect = effect_manager.get_current()
+
+    # count_fps()
     commands = None
     if effect.is_dynamic:
         # band_levels = audioProcessor.create_band_levels(audio_chunk)
@@ -76,13 +74,14 @@ def display_effects(audio_info: AudioInfo) -> None:
 
 
 def test_two_pyramids(audio_info: AudioInfo) -> None:
-    global effect, effect2
-    count_fps()
+    effect = effect_manager.get_effect_by_name("Snake")
+    effect2 = effect_manager.get_effect_by_name("BeatOctagon")
+
     commands = None
     if audio_info.bands is None:
         return
 
-    effect.update(audio_info)
+    effect.update()
     effect2.update(audio_info)
 
     commands = effect.pyramid.combine(effect2.pyramid)
@@ -93,13 +92,29 @@ def test_two_pyramids(audio_info: AudioInfo) -> None:
             send_leds_to_client(cmd_bytes)
 
 
+def on_effect_change(effect_name: str) -> None:
+    """
+    Callback function to handle effect changes.
+    This function is called when the effect is changed in the state manager.
+    """
+    print(f"Effect changed to: {effect_name}")
+    effect_manager.set_current(effect_name)
+    send_leds_to_client(cmd_turn_off.to_bytes())
+
+
+def setup_hooks():
+    state_manager.set_effect_callback(on_effect_change)
+
+
 def init():
+    audioProcessor.list_audio_devices()
     conf_dict = config.get_config_dict()
     audio_config.set_config(conf_dict)
     udp_config.set_config(conf_dict)
     api_config.set_config(conf_dict)
     effects_config.set_config(conf_dict)
-    audioProcessor.setup(test_two_pyramids)
+    audioProcessor.setup(display_effects)
+    setup_hooks()
     server.start()
 
 

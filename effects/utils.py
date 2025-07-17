@@ -3,9 +3,10 @@ from typing import List, Iterable, Optional
 import random
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, asdict, fields
-from typing import List, Any, Optional, Dict, Literal, Tuple
+from typing import List, Any, Optional, Dict, Literal, Tuple, Union
 from numpy import uint8
 from time import time
+from enum import Enum
 
 
 @dataclass
@@ -40,6 +41,13 @@ class Pixel:
             uint8(self.r * factor),
             uint8(self.g * factor),
             uint8(self.b * factor)
+        )
+
+    def fade(self, fade_factor: float) -> 'Pixel':
+        return Pixel(
+            uint8(self.r * fade_factor),
+            uint8(self.g * fade_factor),
+            uint8(self.b * fade_factor)
         )
 
     def __bytes__(self) -> bytes:
@@ -231,7 +239,9 @@ class Particle:
                  speed: int,  # how fast the particle moves 1-30
                  lifetime: float,
                  update_speed: float,
-                 time_of_creation: float = time()):
+                 fade_time: float = None,
+                 time_of_creation: float = time()
+                 ):
         self.color = color
         self.position = position
         self.direction = direction
@@ -239,11 +249,17 @@ class Particle:
         self.update_speed = update_speed
         self._last_update = time_of_creation
         self.speed = speed
+        self.fade_time = fade_time
         self.step = direction * speed
+        self.fade_factor = 1
 
     def update(self, current_time: float = time()):
         time_passed = current_time - self._last_update
         self.lifetime -= time_passed
+
+        if self.fade_time and self.lifetime < self.fade_time:
+            self.color = self.color.fade(self.fade_factor)
+            self.fade_factor *= 0.8
 
         if time_passed >= self.update_speed:
             self.position += self.step
@@ -266,7 +282,8 @@ class Particle:
             lifetime=self.lifetime,
             update_speed=self.update_speed,
             time_of_creation=self._last_update,
-            speed=self.speed
+            speed=self.speed,
+            fade_time=self.fade_time
         )
 
     def __repr__(self):
@@ -276,79 +293,111 @@ class Particle:
                 f"update_speed={self.update_speed:.2f})")
 
 
+class EndType(Enum):
+    HEAD = 1
+    TAIL = 2
+
+
+class GateMode(Enum):
+    SPLIT = 1
+    ARROW = 2
+
+
 class ParticleLine:
+    class Gate:
+        def __init__(self, mode: GateMode, end: EndType, len: int):
+            self._mode = mode
+            self._end = end
+            self._len = len
+            self._particle_lines: List[Tuple['ParticleLine', end:EndType]] = []
+            self.previously_passed: bool = False
+            self._arrow_index: int = 0
+            self._split_indexes: List[int] = []
+
+        def set_mode(self, mode: GateMode):
+            if not isinstance(mode, GateMode):
+                raise TypeError("mode must be an instance of GateMode")
+            self._mode = mode
+
+        def append(
+            self,
+            particle_lines: Union[Tuple['ParticleLine', EndType], List[Tuple['ParticleLine', EndType]]],
+            add_to_split: bool = True
+        ):
+            if not isinstance(particle_lines, list):
+                particle_lines = [particle_lines]
+
+            for particle_line in particle_lines:
+                if particle_line not in self._particle_lines:
+                    self._particle_lines.append(particle_line)
+                    if add_to_split:
+                        self._split_indexes.append(
+                            len(self._particle_lines) - 1)
+
+        def create_particle_to_pass(self, particle: Particle, target_line: 'ParticleLine', target_end: EndType) -> Particle:
+            if target_end == EndType.HEAD:
+                direction = 1
+            else:
+                direction = -1
+
+            if self._end == EndType.HEAD:
+                if target_end == EndType.HEAD:
+                    new_position = abs(particle.position) - 1
+                elif target_end == EndType.TAIL:
+                    new_position = len(target_line) + particle.position
+            elif self._end == EndType.TAIL:
+                if target_end == EndType.HEAD:
+                    new_position = particle.position - self._len
+                elif target_end == EndType.TAIL:
+                    new_position = len(target_line) + \
+                        self._len - particle.position - 1
+
+            return particle.clone(new_position, direction)
+
+        def transfer(self, particle: Particle):
+            if self._mode == GateMode.SPLIT:
+                for index, (target_line, target_end) in enumerate(self._particle_lines):
+                    new_particle = self.create_particle_to_pass(
+                        particle, target_line, target_end)
+                    if index in self._split_indexes:
+                        target_line.add_particle(new_particle)
+
+            elif self._mode == GateMode.ARROW:
+                if not self.previously_passed:
+                    self._arrow_index = random.randint(
+                        0, len(self._particle_lines) - 1)
+
+                target_line, target_end = self._particle_lines[self._arrow_index]
+
+                new_particle = self.create_particle_to_pass(
+                    particle, target_line, target_end)
+
+                target_line.add_particle(new_particle)
+
     def __init__(self, view: PixelArrayView):
         self.view = view
         self.particles: list[Particle] = []
-        self._connections_head: List[Tuple['ParticleLine',
-                                           Literal["head", "tail"]]] = []
-        self._connections_tail: List[Tuple['ParticleLine',
-                                           Literal["head", "tail"]]] = []
+        self.gate_head: ParticleLine.Gate = ParticleLine.Gate(
+            GateMode.SPLIT, EndType.HEAD, len(view))
+        self.gate_tail: ParticleLine.Gate = ParticleLine.Gate(
+            GateMode.SPLIT, EndType.TAIL, len(view))
 
     def __len__(self):
         return len(self.view)
-
-    def add_connection_to_head(self, other: Tuple['ParticleLine', Literal["head", "tail"]]):
-        if other not in self._connections_head:
-            self._connections_head.append(other)
-
-    def add_connections_to_head(self, others: Iterable[Tuple['ParticleLine', Literal["head", "tail"]]]):
-        for other in others:
-            self.add_connection_to_head(other)
-
-    def add_connection_to_tail(self, other: Tuple['ParticleLine', Literal["head", "tail"]]):
-        if other not in self._connections_tail:
-            self._connections_tail.append(other)
-
-    def add_connections_to_tail(self, others: Iterable[Tuple['ParticleLine', Literal["head", "tail"]]]):
-        for other in others:
-            self.add_connection_to_tail(other)
-
-    def remove_connection_to_head(self, other: Tuple['ParticleLine', Literal["head", "tail"]]):
-        if other in self._connections_head:
-            self._connections_head.remove(other)
-
-    def remove_connection_to_tail(self, other: Tuple['ParticleLine', Literal["head", "tail"]]):
-        if other in self._connections_tail:
-            self._connections_tail.remove(other)
-
-    def remove_all_connections(self):
-        self._connections_head.clear()
-        self._connections_tail.clear()
-
-    def add_connection(self, from_end: Literal["head", "tail"], target: Tuple['ParticleLine', Literal["head", "tail"]]):
-        connections = self._connections_head if from_end == "head" else self._connections_tail
-        if target not in connections:
-            connections.append(target)
 
     def set_intensity(self, intensity: uint8):
         for particle in self.particles:
             particle.color = particle.color.set_intensity(intensity)
 
-    def transfer_particle(self, particle: Particle, target_line: 'ParticleLine', target_end: Literal["head", "tail"], from_head: bool):
-        if target_end == "head":
-            direction = 1
-        else:
-            direction = -1
-
-        if from_head:
-            if target_end == "head":
-                new_position = abs(particle.position) - 1
-            else:
-                new_position = len(target_line) + particle.position
-        else:
-            if target_end == "head":
-                new_position = particle.position - len(self)
-            else:
-                new_position = len(target_line) + \
-                    len(self) - particle.position - 1
-
-        new_particle = particle.clone(new_position, direction)
-        target_line.add_particle(new_particle)
+    def jump_particles(self, jump_distance: int):
+        for p in self.particles:
+            p.position += jump_distance * p.direction
 
     def update(self, current_time: float = time()):
         self.view[:] = Colors.BLACK
         remaining_particles: list[Particle] = []
+        transferred_head = False
+        transferred_tail = False
 
         for p in self.particles:
             p.update(current_time)
@@ -358,16 +407,14 @@ class ParticleLine:
 
             # Particle exited through head
             if p.position < 0:
-                for target_line, target_end in self._connections_head:
-                    self.transfer_particle(
-                        p, target_line, target_end, from_head=True)
+                self.gate_head.transfer(p)
+                transferred_head = True
                 continue  # Don't keep the original particle
 
             # Particle exited through tail
             elif p.position >= len(self.view):
-                for target_line, target_end in self._connections_tail:
-                    self.transfer_particle(
-                        p, target_line, target_end, from_head=False)
+                self.gate_tail.transfer(p)
+                transferred_tail = True
                 continue  # Don't keep the original particle
 
             # Within bounds — render it
@@ -378,9 +425,18 @@ class ParticleLine:
 
             remaining_particles.append(p)
 
+        self.gate_head.previously_passed = transferred_head
+        self.gate_tail.previously_passed = transferred_tail
+
         self.particles = remaining_particles
 
     def add_particle(self, particle: Particle):
+        """
+        for p in self.particles:
+            if p.position == particle.position and p.direction == particle.direction:
+                # Particle already exists at this position with the same direction
+                return
+        """
         self.particles.append(particle)
 
 
@@ -402,6 +458,11 @@ class ParticleLineGroup:
     def __len__(self):
         return len(self.lines)
 
+    def set_gates_mode(self, mode: GateMode):
+        for line in self.lines:
+            line.gate_head.set_mode(mode)
+            line.gate_tail.set_mode(mode)
+
     def add_particle(self, particle: Particle):
         if not self.lines:
             raise ValueError(
@@ -410,6 +471,10 @@ class ParticleLineGroup:
         for line in self.lines:
             if particle.position < len(line):
                 line.add_particle(particle)
+
+    def jump_particles(self, jump_distance: int):
+        for line in self.lines:
+            line.jump_particles(jump_distance)
 
     def update(self, current_time: float = time()):
         for line in self.lines:
@@ -738,6 +803,14 @@ class DigitalPyramid:
             )
         ]
 
+        self.two_lines_body_groups = [
+            PixelGroup(
+                (self.segments_A[i], False),
+                (self.segments_C[i], False),
+            )
+            for i in range(8)
+        ]
+
         self.cmd_A = Command(Command.COMMAND_TYPE_FULL_SECTION,
                              Command.SECTION_ID_A, bytearray(), self.section_A)
         self.cmd_B = Command(Command.COMMAND_TYPE_FULL_SECTION,
@@ -756,6 +829,40 @@ class DigitalPyramid:
         self.section_A.set_all(colors.BLACK)
         self.section_B.set_all(colors.BLACK)
         self.section_C.set_all(colors.BLACK)
+
+    def connect_all_particle_lines(self):
+        for i in range(8):
+            # Side connections
+            self.lines_A[i].gate_tail.append([
+                (self.lines_C[i], EndType.HEAD),
+                (self.lines_B[i], EndType.HEAD),
+                (self.lines_B[(i+7) % 8], EndType.TAIL),
+            ])
+            self.lines_B[i].gate_head.append([
+                (self.lines_A[i], EndType.TAIL),
+                (self.lines_C[i], EndType.HEAD),
+                (self.lines_B[(i+7) % 8], EndType.TAIL)
+            ])
+            self.lines_B[(i+7) % 8].gate_tail.append([
+                (self.lines_A[i], EndType.TAIL),
+                (self.lines_C[i], EndType.HEAD),
+                (self.lines_B[i], EndType.HEAD)
+            ])
+            self.lines_C[(i) % 8].gate_head.append([
+                (self.lines_A[i], EndType.TAIL),
+                (self.lines_B[i], EndType.HEAD),
+                (self.lines_B[(i+7) % 8], EndType.TAIL)
+            ])
+
+            # Top connections
+            self.lines_C[i].gate_tail.append([
+                (self.lines_C[(i + j) % 8], EndType.TAIL) for j in range(1, 8)
+            ])
+
+            # Bottom connections
+            self.lines_A[i].gate_head.append([
+                (self.lines_A[(i + j) % 8], EndType.HEAD) for j in range(1, 8)
+            ])
 
     def combine(self, other: 'DigitalPyramid') -> List[Command]:
         if not isinstance(other, DigitalPyramid):

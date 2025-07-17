@@ -3,10 +3,13 @@ from .static.triangle_lines import triangleLines
 from .static.bottom_triangles import bottom_triangles
 from .static.side_triangles import side_triangles
 from .static.body_triangles import body_triangles
+from .static.snake import snake
 from .dynamic.spectrum import spectrum4
 from .dynamic.spectrum_octagon import spectrum_octagon
 from .dynamic.spectrum_triangles import spectrum_triangles
+from .dynamic.spectrum_two_lines import spectrum_two_lines
 from .dynamic.beat_blast import beat_blast
+from .dynamic.beat_octagon import beat_octagon
 from .utils import Effect
 
 
@@ -77,18 +80,24 @@ all_effects = {
     bottom_triangles.config.name: bottom_triangles,
     side_triangles.config.name: side_triangles,
     body_triangles.config.name: body_triangles,
-    beat_blast.config.name: beat_blast
+    beat_blast.config.name: beat_blast,
+    beat_octagon.config.name: beat_octagon,
+    spectrum_two_lines.config.name: spectrum_two_lines,
+    snake.config.name: snake
 }
 
 dynamic_names = [spectrum4.config.name,
                  spectrum_octagon.config.name,
                  spectrum_triangles.config.name,
-                 beat_blast.config.name]
+                 beat_blast.config.name,
+                 beat_octagon.config.name,
+                 spectrum_two_lines.config.name]
 static_names = [travelingDots.config.name,
                 triangleLines.config.name,
                 bottom_triangles.config.name,
                 side_triangles.config.name,
-                body_triangles.config.name]
+                body_triangles.config.name,
+                snake.config.name]
 
 effect_manager = EffectManager(
     all_effects=all_effects,

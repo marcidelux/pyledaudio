@@ -1,81 +1,38 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
+
 <head>
-  <title>LED Controller</title>
-  <script src="chart.js"></script>
-  <style>
-    html, body {
-      margin: 0;
-      height: 100%;
-      background-color: gray;
-    }
-
-    body {
-      display: flex;
-      flex-direction: column;
-    }
-
-    #chartContainer {
-      flex-grow: 1;
-      height: calc(100% - 60px); /* Adjust based on your top area height */
-    }
-
-    #bandChart {
-      width: 100%;
-      height: 100%;
-    }
-  </style>
+    <meta charset="UTF-8" />
+    <title>PICO-8 Style Test</title>
+    <link rel="stylesheet" href="style.css" />
 </head>
+
 <body>
 
-  <div id="chartContainer">
-    <canvas id="bandChart"></canvas>
-  </div>
+    <!-- Centered Logo at the Top -->
+    <div style="text-align: center; padding: 16px;">
+        <img src="logo.png" alt="Logo" style="height: 80px;" />
+    </div>
 
-  <script>
+    <div class="base center gray">main control</div>
+    <div class="row">
+        <div id="power-sw" class="flex-1"></div>
+        <div id="brightness-sb" class="flex-3"></div>
+    </div>
+    <div id="static-effects"></div>
+    <div id="dynamic-effects"></div>
 
-    async function initChart() {
-      const response = await fetch("/config");
-      const config = await response.json();
+    <script src="controls.js"></script>
+    <script src="logic.js"></script>
 
-      const labels = [];
-      for (let i = 1; i <= config.num_bands; i++) {
-        labels.push(`Band ${i}`);
-      }
-
-      const ctx = document.getElementById('bandChart').getContext('2d');
-
-      const chart = new Chart(ctx, {
-        type: 'bar',
-        data: {
-          labels: labels,
-          datasets: [{
-            label: 'Band Power',
-            data: Array(config.num_bands).fill(0),
-            backgroundColor: config.colors
-          }]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          animation: false,
-          scales: {
-            y: { min: 0, max: 255 }
-          }
-        }
-      });
-
-      const socket = new WebSocket(`ws://${location.host}/ws/bands`);
-      socket.onmessage = event => {
-        const msg = JSON.parse(event.data);
-        if (msg.bands) {
-          chart.data.datasets[0].data = msg.bands;
-          chart.update();
-        }
-      };
-    }
-
-    initChart();
-  </script>
+    <div class="row">
+        <div class="flex-1">
+            <iframe src="pyramid.html" width="100%" height="300"></iframe>
+        </div>
+        <div class="flex-1">
+            <iframe src="bands.html" width="100%" height="300"></iframe>
+        </div>
+    </div>
 </body>
+
 </html>

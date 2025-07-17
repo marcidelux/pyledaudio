@@ -10,6 +10,6 @@ def set_config(config: dict):
     N_FFT_BINS = config.get('N_FFT_BINS', N_FFT_BINS)
 
     # Print all global variables defined in this file
-    print("Current configuration:")
+    print("#### EFFECT ### - Current configuration:")
     print(f"DISPLAY_FREQUENCY: {DISPLAY_FREQUENCY}")
-    print(f"N_FFT_BINS: {N_FFT_BINS}")
+    print(f"N_FFT_BINS: {N_FFT_BINS}\n")

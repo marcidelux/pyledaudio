@@ -1,4 +1,3 @@
-import time
 from dataclasses import dataclass
 from typing import Optional, List
 from ..utils import (
@@ -7,8 +6,7 @@ from ..utils import (
     DigitalPyramid,
     colors,
     Pixel,
-    AudioInfo,
-    Particle
+    AudioInfo
 )
 
 

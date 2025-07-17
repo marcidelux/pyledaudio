@@ -8,3 +8,8 @@ def set_config(config: dict):
     SERVER_IP = config.get('SERVER_IP', SERVER_IP)
     SERVER_PORT = config.get('SERVER_PORT', SERVER_PORT)
     N_FFT_BINS = config.get('N_FFT_BINS', N_FFT_BINS)
+
+    print("#### API ### - Current configuration:")
+    print(f"SERVER_IP: {SERVER_IP}")
+    print(f"SERVER_PORT: {SERVER_PORT}")
+    print(f"N_FFT_BINS: {N_FFT_BINS}\n")

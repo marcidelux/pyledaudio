@@ -1,0 +1,356 @@
+/* PICO-8 Font https://github.com/MalphasWats/computing.codes/blob/gh-pages/style/assets/fonts/pico-8.ttf*/
+@font-face {
+    font-family: 'PICO-8';
+    src: url('pico-8.ttf') format('truetype');
+}
+
+* {
+    font-family: 'PICO-8', monospace;
+    font-size: 1.1rem;
+    line-height: 1.4rem;
+    box-sizing: border-box;
+    overflow: hidden;
+}
+
+html,
+body {
+    height: 100%;
+    background-color: var(--c0);
+}
+
+/* basic PICO-8 Palette */
+:root {
+    --c0: #000000;
+    --c1: #1d2b53;
+    --c2: #7e2553;
+    --c3: #008751;
+    --c4: #ab5236;
+    --c5: #5f574f;
+    --c6: #c2c3c7;
+    --c7: #fff1e8;
+    --c8: #ff004d;
+    --c9: #ffa300;
+    --c10: #ffec27;
+    --c11: #00e436;
+    --c12: #29adff;
+    --c13: #83769c;
+    --c14: #ff77a8;
+    --c15: #ffccaa;
+}
+
+/* extended PICO-8 palette */
+:root.extended-mode {
+    --c0: #291814;
+    --c1: #111d35;
+    --c2: #422136;
+    --c3: #125359;
+    --c4: #742f29;
+    --c5: #49333b;
+    --c6: #a28879;
+    --c7: #f3ef7d;
+    --c8: #be1250;
+    --c9: #ff6c24;
+    --c10: #a8e72e;
+    --c11: #00b543;
+    --c12: #065ab5;
+    --c13: #754665;
+    --c14: #ff6e59;
+    --c15: #ff9d81;
+}
+
+/* PICO-8 canvas */
+canvas {
+    position: fixed;
+    top: 4px;
+    right: 4px;
+    width: 512px;
+    height: 512px;
+    image-rendering: pixelated;
+    cursor: none;
+}
+
+/* status LED */
+#led {
+    position: absolute;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    border: 4px solid var(--c5);
+    right: 6px;
+    top: 522px;
+    transition: background 0.1s;
+}
+
+#led.red_light {
+    background: var(--c8);
+}
+
+#led.green_light {
+    background: var(--c11);
+}
+
+#led.blue_light {
+    background: var(--c12);
+}
+
+#reset {
+    position: absolute;
+    right: 28px;
+    top: 522px;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    border: 4px solid var(--c5);
+    background-color: var(--c2);
+    color: var(--c7);
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+#reset:hover {
+    background-color: var(--c8);
+}
+
+#reset.blinking {
+    animation: blink 0.3s 3;
+}
+
+@keyframes blink {
+    0% {
+        background-color: var(--c0);
+    }
+
+    50% {
+        background-color: var(--c2);
+    }
+
+    100% {
+        background-color: var(--c8);
+    }
+}
+
+/* base class for PICO-8 styled elements */
+.base {
+    background: var(--bg);
+    color: var(--fg);
+    border: 4px solid var(--border);
+    border-radius: 8px;
+    padding: 4px;
+    margin: 2px;
+    text-align: center;
+}
+
+.invisible {
+    display: none;
+}
+
+.flex-1 {
+    flex: 1;
+}
+
+.flex-2 {
+    flex: 2;
+}
+
+.flex-3 {
+    flex: 3;
+}
+
+.flex-4 {
+    flex: 4;
+}
+
+.flex-5 {
+    flex: 5;
+}
+
+.left {
+    text-align: left;
+}
+
+.row {
+    display: flex;
+    flex-direction: row;
+    margin-top: 4px;
+}
+
+.col {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.interactive {
+    cursor: pointer;
+    user-select: none;
+    box-shadow: 0 4px 0 var(--shadow);
+    transition: background 0.1s,
+        color 0.1s,
+        box-shadow 0.1s,
+        transform 0.1s;
+}
+
+.interactive:hover {
+    background: var(--bg-h);
+    color: var(--fg-h);
+    box-shadow: 0 4px 0 var(--shadow-h);
+    border-color: var(--border-h);
+}
+
+.button:active {
+    box-shadow: none;
+    transform: translateY(4px);
+}
+
+.slider {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 100%;
+    height: 100%;
+    padding: 0;
+    margin: 0;
+    background: var(--bg);
+    border: none;
+    /* container div handles border */
+    border-radius: 0;
+    box-shadow: none;
+    cursor: pointer;
+    display: block;
+}
+
+.slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 22px;
+    height: 22px;
+    background: var(--fg);
+    border: 2px solid var(--border);
+    border-radius: 2px;
+    box-shadow: 0 0 0 1px var(--shadow);
+    cursor: pointer;
+}
+
+.slider::-moz-range-thumb {
+    width: 22px;
+    height: 22px;
+    background: var(--fg);
+    border: 2px solid var(--border);
+    border-radius: 2px;
+    box-shadow: 0 0 0 1px var(--shadow);
+    cursor: pointer;
+}
+
+.gray {
+    --shadow: var(--c0);
+    --shadow-h: var(--c5);
+    --bg: var(--c5);
+    --bg-h: var(--c6);
+    --fg: var(--c7);
+    --fg-h: var(--c15);
+    --border: var(--c6);
+    --border-h: var(--c7);
+}
+
+.red {
+    --shadow: var(--c0);
+    --shadow-h: var(--c2);
+    --bg: var(--c2);
+    --bg-h: var(--c8);
+    --fg: var(--c8);
+    --fg-h: var(--c14);
+    --border: var(--c14);
+    --border-h: var(--c15);
+}
+
+/* blue:    [0,1,13,12,7] */
+.blue {
+    --shadow: var(--c0);
+    --shadow-h: var(--c1);
+    --bg: var(--c1);
+    --bg-h: var(--c13);
+    --fg: var(--c12);
+    --fg-h: var(--c7);
+    --border: var(--c12);
+    --border-h: var(--c7);
+}
+
+/* green:   [0,5,3,11,7] */
+.green {
+    --shadow: var(--c0);
+    --shadow-h: var(--c5);
+    --bg: var(--c3);
+    --bg-h: var(--c11);
+    --fg: var(--c11);
+    --fg-h: var(--c7);
+    --border: var(--c11);
+    --border-h: var(--c7);
+}
+
+/* yellow:  [0,4,9,8,7] */
+.yellow {
+    --shadow: var(--c0);
+    --shadow-h: var(--c4);
+    --bg: var(--c4);
+    --bg-h: var(--c9);
+    --fg: var(--c10);
+    --fg-h: var(--c7);
+    --border: var(--c9);
+    --border-h: var(--c10);
+}
+
+.orange {
+    --shadow: var(--c0);
+    --shadow-h: var(--c4);
+    --bg: var(--c4);
+    --bg-h: var(--c9);
+    --fg: var(--c9);
+    --fg-h: var(--c10);
+    --border: var(--c9);
+    --border-h: var(--c10);
+}
+
+#generator_panel {
+    position: absolute;
+    top: 540px;
+    right: 0px;
+    width: 512px;
+}
+
+#density_slider,
+#strength_slider {
+    cursor: pointer;
+}
+
+.picker {
+    padding-top: 2px;
+}
+
+#editor_panel {
+    position: absolute;
+    top: 0px;
+    right: 518px;
+    min-width: 1398px;
+}
+
+.scroll-list {
+    max-height: 440px;
+    overflow-y: auto;
+    padding-right: 5px;
+}
+
+.scroll-list::-webkit-scrollbar {
+    width: 8px;
+}
+
+.scroll-list::-webkit-scrollbar-track {
+    background: var(--c1);
+}
+
+.scroll-list::-webkit-scrollbar-thumb {
+    background: var(--c13);
+    border-radius: 4px;
+}
+
+.scroll-list::-webkit-scrollbar-thumb:hover {
+    background: var(--c12);
+}

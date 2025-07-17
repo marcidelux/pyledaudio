@@ -7,7 +7,8 @@ from ..utils import (
     Pixel,
     DigitalPyramid,
     Colors,
-    Particle
+    Particle,
+    EndType
 )
 
 
@@ -32,6 +33,21 @@ class BottomTriangles(Effect):
         self.previous_spawn_time = self.previous_time
         self.spawn_time = 1
 
+        self.pyramid.lines_A[0].gate_tail.append([
+            (self.pyramid.lines_B[0], EndType.HEAD),
+            (self.pyramid.lines_C[0], EndType.HEAD),
+            (self.pyramid.lines_B[7], EndType.TAIL)
+        ])
+        self.pyramid.lines_B[0].gate_tail.append([
+            (self.pyramid.lines_C[1], EndType.HEAD),
+            (self.pyramid.lines_B[1], EndType.HEAD)
+        ])
+
+        self.pyramid.lines_B[7].gate_head.append([
+            (self.pyramid.lines_C[7], EndType.HEAD),
+            (self.pyramid.lines_B[6], EndType.TAIL)
+        ])
+
     def update(self) -> List[Command] | None:
         current_time = time.time()
 
@@ -44,22 +60,12 @@ class BottomTriangles(Effect):
                 color=self.config.colors[0],
                 position=0,
                 direction=1,
-                lifetime=7.0,
-                update_speed=0.1,
+                lifetime=10,
+                update_speed=0.03,
                 speed=1,
                 time_of_creation=current_time
             )
-            particle2 = Particle(
-                color=self.config.colors[1],
-                position=1,
-                direction=1,
-                lifetime=7.0,
-                update_speed=0.03,
-                speed=2,
-                time_of_creation=current_time
-            )
             self.pyramid.lines_A[0].add_particle(particle1)
-            # self.pyramid.lines_A[0].add_particle(particle2)
 
         self.pyramid.update(self.previous_time)
 

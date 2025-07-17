@@ -22,7 +22,7 @@ def set_config(config: dict):
     MAX_VOLUME = config.get('MAX_VOLUME', MAX_VOLUME)
 
     # Print all global variables defined in this file
-    print("Current configuration:")
+    print("#### AUDIO ### - Current configuration:")
     print(f"MIC_RATE: {MIC_RATE}")
     print(f"MIC_DEVICE_INDEX: {MIC_DEVICE_INDEX}")
     print(f"SAMPLING_FREQUENCY: {SAMPLING_FREQUENCY}")
@@ -31,4 +31,4 @@ def set_config(config: dict):
     print(f"MAX_FREQUENCY: {MAX_FREQUENCY}")
     print(f"N_FFT_BINS: {N_FFT_BINS}")
     print(f"N_ROLLING_HISTORY: {N_ROLLING_HISTORY}")
-    print(f"MAX_VOLUME: {MAX_VOLUME}")
+    print(f"MAX_VOLUME: {MAX_VOLUME}\n")

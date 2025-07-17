@@ -8,5 +8,6 @@ def set_config(config: dict):
     global UDP_IP, UDP_PORT
     UDP_IP = config.get('UDP_IP', UDP_IP)
     UDP_PORT = config.get('UDP_PORT', UDP_PORT)
+    print("#### UDP ### - Current configuration:")
     print(f"UDP_IP: {UDP_IP}")
-    print(f"UDP_PORT: {UDP_PORT}")
+    print(f"UDP_PORT: {UDP_PORT}\n")
