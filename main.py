@@ -4,12 +4,12 @@ from audio import config as audio_config
 from audio.process import audioProcessor, AudioInfo
 from effects import config as effects_config
 from effects.effects_manager import effect_manager
-from effects.utils import cmd_turn_off
+from effects.utils import cmd_turn_off, Command
 from udp import config as udp_config
 from udp.client import udp_client
 from api import server, config as api_config
 from state import state_manager
-
+from typing import List
 import numpy as np
 import time
 
@@ -54,37 +54,31 @@ def display_bands(audio_chunk: np.ndarray) -> None:
 
 
 def display_effects(audio_info: AudioInfo) -> None:
-    effect = effect_manager.get_current()
+    commands: List[Command] = None
 
-    # count_fps()
-    commands = None
-    if effect.is_dynamic:
-        # band_levels = audioProcessor.create_band_levels(audio_chunk)
-        if audio_info.bands == None:
-            return
-        send_bands_to_client(audio_info.bands)
-        commands = effect.update(audio_info)
-    else:
-        commands = effect.update()
-    if commands is not None:
-        for command in commands:
-            cmd_bytes = command.to_bytes()
-            send_leds_to_client(cmd_bytes)
-            # udp_client.send_bytes(cmd_bytes)
-
-
-def test_two_pyramids(audio_info: AudioInfo) -> None:
-    effect = effect_manager.get_effect_by_name("Snake")
-    effect2 = effect_manager.get_effect_by_name("BeatOctagon")
-
-    commands = None
     if audio_info.bands is None:
         return
 
-    effect.update()
-    effect2.update(audio_info)
+    send_bands_to_client(audio_info.bands)
 
-    commands = effect.pyramid.combine(effect2.pyramid)
+    if effect_manager.current_primary_effect.is_dynamic:
+        effect_manager.current_primary_effect.update(audio_info)
+    else:
+        effect_manager.current_primary_effect.update()
+
+    is_double_effect = effect_manager.current_secondary_effect is not None
+
+    if is_double_effect:
+        if effect_manager.current_secondary_effect.is_dynamic:
+            effect_manager.current_secondary_effect.update(audio_info)
+        else:
+            effect_manager.current_secondary_effect.update()
+
+        commands = effect_manager.current_primary_effect.pyramid.combine(
+            effect_manager.current_secondary_effect.pyramid
+        )
+    else:
+        commands = effect_manager.current_primary_effect.get_commands()
 
     if commands is not None:
         for command in commands:
@@ -92,18 +86,9 @@ def test_two_pyramids(audio_info: AudioInfo) -> None:
             send_leds_to_client(cmd_bytes)
 
 
-def on_effect_change(effect_name: str) -> None:
-    """
-    Callback function to handle effect changes.
-    This function is called when the effect is changed in the state manager.
-    """
-    print(f"Effect changed to: {effect_name}")
-    effect_manager.set_current(effect_name)
+def on_effect_change() -> None:
     send_leds_to_client(cmd_turn_off.to_bytes())
-
-
-def setup_hooks():
-    state_manager.set_effect_callback(on_effect_change)
+    print("Effect changed")
 
 
 def init():
@@ -114,18 +99,13 @@ def init():
     api_config.set_config(conf_dict)
     effects_config.set_config(conf_dict)
     audioProcessor.setup(display_effects)
-    setup_hooks()
+    effect_manager.set_on_change_callback(on_effect_change)
     server.start()
+    print("Server started")
 
 
 if __name__ == "__main__":
     init()
-    list_names = effect_manager.list_names()
-    for name in list_names:
-        print(f"Effect list: {name}")
-        print(f"Elements: {effect_manager.get_list_elements(name)}")
-    # effect_manager.switch_list("static")
-    # effect_manager.next()
     audioProcessor.start()
 
     try:
@@ -135,63 +115,3 @@ if __name__ == "__main__":
         print("Shutting down...")
         audioProcessor.stop()
         audioProcessor.terminate()
-
-
-"""
-
-def display_effects(audio_chunk: np.ndarray) -> None:
-    global last_time, switch_time
-    current_time = time.time()
-    effect = effect_manager.current()
-    if current_time - last_time >= switch_time:
-        last_time = current_time
-        effect = effect_manager.next_effect()
-        send_leds_to_client(protocol.cmd_turn_off.to_bytes())
-
-    band_levels = process.create_band_levels(audio_chunk)
-    effect.update(band_levels)
-
-    if band_levels is not None:
-        send_bands_to_client(band_levels)
-
-    for command in effect.get_commands():
-        cmd_bytes = command.to_bytes()
-        send_leds_to_client(cmd_bytes)
-        udp_client.send_bytes(cmd_bytes)
-
-
-    def process_audio_and_send(audio_chunk: np.ndarray) -> None:
-    global music_turned_off
-
-    band_levels = process.create_band_levels(audio_chunk)
-    if band_levels is None:
-        if not music_turned_off:
-            music_turned_off = True
-            send_leds_to_client(protocol.cmd_turn_off.to_bytes())
-            print("Music turned off")
-        return
-    music_turned_off = False
-
-    send_bands_to_client(band_levels)
-
-    spectrumEffect.calculate(band_levels)
-    for command in spectrumEffect.get_commands():
-        send_leds_to_client(command.to_bytes())
-        #udp_client.send_bytes(command.to_bytes())
-    
-    #udp_client.send_bytes(spectrumEffect.two_segments_A.to_bytes())
-    #udp_client.send_bytes(spectrumEffect.two_segments_C.to_bytes())
-
-def static_triangle_effect():
-    while True:
-        if (triangleEffect.update()):
-            for command in triangleEffect.get_commands():
-                send_leds_to_client(command.to_bytes())
-        time.sleep(0.02)
-
-def active_triangle_effect(audio_chunk: np.ndarray) -> None:
-    band_levels = process.create_band_levels(audio_chunk)
-    if (triangleEffect.update(band_levels)):
-        for command in triangleEffect.get_commands():
-            send_leds_to_client(command.to_bytes())
-"""

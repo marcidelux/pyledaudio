@@ -26,13 +26,11 @@ class SpectrumTwoLines(Effect):
             colors.CYAN, colors.MAGENTA,
             colors.WHITE, colors.ORANGE
         ])
-
-        self.pyramid = DigitalPyramid()
         self.idx_mod = 0
         self.beat_cntr = 0
 
-    def update(self, audio_info: Optional[AudioInfo] = None) -> List[Command] | None:
-        if audio_info.bands is None:
+    def update(self, audio_info: Optional[AudioInfo] = None) -> None:
+        if audio_info is None:
             return None
 
         self.pyramid.clear()
@@ -52,6 +50,7 @@ class SpectrumTwoLines(Effect):
                 audio_info.bands[i % num_bands])
             self.pyramid.two_lines_body_groups[idx].set_all(pixel)
 
+    def get_commands(self) -> List[Command]:
         return self.pyramid.cmds
 
 

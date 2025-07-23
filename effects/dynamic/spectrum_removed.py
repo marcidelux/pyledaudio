@@ -37,9 +37,10 @@ class Spectrum4(Effect):
         self.segments_C = Command(Command.COMMAND_TYPE_SINGLE_SEGMENT,
                                   Command.SECTION_ID_C, bytearray([0, 2, 4, 6]), self.view_C)
 
-    def update(self, audio_info: Optional[AudioInfo] = None) -> List[Command]:
+    def update(self, audio_info: Optional[AudioInfo] = None) -> None:
         if audio_info is None:
-            return [self.segments_A, self.segments_C]
+            return None
+
         num_bands = len(audio_info.bands)
         leds_per_band = len(self.spectrum) // num_bands
         for i, level in enumerate(audio_info.bands):
@@ -51,6 +52,7 @@ class Spectrum4(Effect):
             # Set the pixels for this band
             self.spectrum[start:end] = pixel
 
+    def get_commands(self) -> List[Command]:
         return [self.segments_A, self.segments_C]
 
 

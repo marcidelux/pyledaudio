@@ -68,11 +68,13 @@ class TriangleLines(Effect):
 
         self.animation_index += 1
 
-    def update(self, band_levels: Optional[bytes] = None) -> List[Command]:
+    def update(self, band_levels: Optional[bytes] = None) -> None:
         current_time = time.time()
         if current_time - self.previous_time >= self.config.update_speed:
             self.previous_time = current_time
             self.calculate()
+
+    def get_commands(self) -> List[Command]:
         return [
             self.cmd_A_1,
             self.cmd_C_1,

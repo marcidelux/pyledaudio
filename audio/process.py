@@ -138,6 +138,7 @@ class AudioProcessor:
         return bytes((mel * 255).astype(np.uint8))
 
     def start(self):
+        print("Starting audio stream")
         self._stream = self._pyaudio.open(
             format=pyaudio.paInt16,
             channels=1,
@@ -148,6 +149,7 @@ class AudioProcessor:
             # <-- This is where PyAudio gets the stream callback
             stream_callback=self._pyaudio_callback
         )
+        print("Audio stream started")
         self._stream.start_stream()
 
     def stop(self):

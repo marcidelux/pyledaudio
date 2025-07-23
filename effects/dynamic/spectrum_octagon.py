@@ -26,9 +26,11 @@ class SpectrumOctagon(Effect):
             colors.CYAN, colors.MAGENTA,
             colors.WHITE, colors.ORANGE
         ])
-        self.pyramid = DigitalPyramid()
 
-    def update(self, audio_info: Optional[AudioInfo] = None) -> List[Command] | None:
+    def update(self, audio_info: Optional[AudioInfo] = None) -> None:
+        if audio_info is None:
+            return None
+
         self.pyramid.clear()
         for i in range(4):
             intensity = (audio_info.bands[i * 2] +
@@ -36,6 +38,7 @@ class SpectrumOctagon(Effect):
             self.pyramid.triangle_body_groups[i].set_all(
                 self.config.colors[i % len(self.config.colors)].set_intensity(intensity))
 
+    def get_commands(self) -> List[Command]:
         return self.pyramid.cmds
 
 

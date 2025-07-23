@@ -26,12 +26,11 @@ class BodyTriangles(Effect):
             update_speed=0.03,
             colors=[Pixel(255, 0, 0), Pixel(0, 255, 0), Pixel(0, 0, 255)]
         )
-        self.pyramid = DigitalPyramid()
         self.previous_time = time.time()
         self.pixel_index = 0
         self.triangle_index = 0
 
-    def update(self) -> List[Command] | None:
+    def update(self) -> None:
         if time.time() - self.previous_time < self.config.update_speed:
             return None
 
@@ -48,6 +47,8 @@ class BodyTriangles(Effect):
         self.pyramid.triangle_body_groups[self.triangle_index][self.pixel_index] = Colors.RED
 
         self.previous_time = time.time()
+
+    def get_commands(self) -> List[Command]:
         return [self.pyramid.cmd_A, self.pyramid.cmd_C]
 
 

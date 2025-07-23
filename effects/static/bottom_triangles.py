@@ -28,7 +28,6 @@ class BottomTriangles(Effect):
             update_speed=0.03,
             colors=[Pixel(255, 0, 0), Pixel(0, 255, 0), Pixel(0, 0, 255)]
         )
-        self.pyramid = DigitalPyramid()
         self.previous_time = time.time()
         self.previous_spawn_time = self.previous_time
         self.spawn_time = 1
@@ -48,7 +47,7 @@ class BottomTriangles(Effect):
             (self.pyramid.lines_B[6], EndType.TAIL)
         ])
 
-    def update(self) -> List[Command] | None:
+    def update(self) -> None:
         current_time = time.time()
 
         if current_time - self.previous_time < self.config.update_speed:
@@ -70,6 +69,8 @@ class BottomTriangles(Effect):
         self.pyramid.update(self.previous_time)
 
         self.previous_time = current_time
+
+    def get_commands(self) -> List[Command]:
         return [self.pyramid.cmd_A, self.pyramid.cmd_B, self.pyramid.cmd_C]
 
 

@@ -26,12 +26,11 @@ class SideTriangles(Effect):
             update_speed=0.2,
             colors=[Pixel(255, 0, 0), Pixel(0, 255, 0), Pixel(0, 0, 255)]
         )
-        self.pyramid = DigitalPyramid()
         self.previous_time = time.time()
         self.current_index = 0
         self.intensity = 0
 
-    def update(self) -> List[Command] | None:
+    def update(self) -> None:
         if time.time() - self.previous_time < self.config.update_speed:
             return None
 
@@ -49,6 +48,8 @@ class SideTriangles(Effect):
 
         self.current_index = (self.current_index + 1) % num_groups
         self.previous_time = time.time()
+
+    def get_commands(self) -> List[Command]:
         return [self.pyramid.cmd_B, self.pyramid.cmd_C]
 
 

@@ -1,0 +1,58 @@
+[
+    {
+        "name": "static",
+        "switch_interval": 30,
+        "effects": [
+            {
+                "primary": "BottomTriangles",
+                "secondary": null
+            },
+            {
+                "primary": "SideTriangles",
+                "secondary": null
+            },
+            {
+                "primary": "BodyTriangles",
+                "secondary": null
+            },
+            {
+                "primary": "Snake",
+                "secondary": null
+            }
+        ]
+    },
+    {
+        "name": "dynamic",
+        "switch_interval": 30,
+        "effects": [
+            {
+                "primary": "SpectrumOctagon",
+                "secondary": null
+            },
+            {
+                "primary": "SpectrumTriangles",
+                "secondary": null
+            },
+            {
+                "primary": "BeatBlast",
+                "secondary": null
+            },
+            {
+                "primary": "BeatOctagon",
+                "secondary": null
+            },
+            {
+                "primary": "SpectrumTwoLines",
+                "secondary": null
+            },
+            {
+                "primary": "BottomTriangles",
+                "secondary": "SpectrumTriangles"
+            },
+            {
+                "primary": "BottomTriangles",
+                "secondary": null
+            }
+        ]
+    }
+]

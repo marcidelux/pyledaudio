@@ -30,7 +30,6 @@ class BeatOctagon(Effect):
             colors.CYAN, colors.MAGENTA,
             colors.WHITE, colors.ORANGE
         ])
-        self.pyramid = DigitalPyramid()
         self.previous_time = time.time()
 
         for i in range(8):
@@ -38,7 +37,7 @@ class BeatOctagon(Effect):
                 (self.pyramid.lines_B[(i+1) % 8], EndType.HEAD)
             )
 
-    def update(self, audio_info: Optional[AudioInfo] = None) -> List[Command] | None:
+    def update(self, audio_info: Optional[AudioInfo] = None) -> None:
         if audio_info is None:
             return None
 
@@ -46,10 +45,6 @@ class BeatOctagon(Effect):
 
         if audio_info.beat_detected:
             random_color = random.choice(self.config.colors)
-            lifetime = random.uniform(1, 10)
-            # random_index = random.randint(0, 7)
-            random_speed = random.randint(1, 3)
-            random_update_speed = random.uniform(0.03, 0.1)
 
             particle = Particle(
                 color=random_color,
@@ -80,6 +75,7 @@ class BeatOctagon(Effect):
         self.pyramid.update(self.previous_time)
         self.previous_time = current_time
 
+    def get_commands(self) -> List[Command]:
         return self.pyramid.cmds
 
 

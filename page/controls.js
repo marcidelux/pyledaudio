@@ -78,6 +78,26 @@ function createToggleSwitch(selector, initial = false, label = "Toggle", onChang
   updateUI(); // initialize state
 }
 
+function createButton(selector, label = "Click Me", onClick = null, color = "blue") {
+  const container = document.querySelector(selector);
+  if (!container) return;
+
+  container.innerHTML = `
+    <div class="row">
+      <div class="base interactive button ${color} flex-1 button-element">
+        ${label}
+      </div>
+    </div>
+  `;
+
+  const button = container.querySelector(".button-element");
+  if (onClick) {
+    button.addEventListener("click", () => {
+      onClick();
+    });
+  }
+}
+
 function createDropdown(selector, label = "Select", initialItems = [], onChange = null) {
   const container = document.querySelector(selector);
   if (!container) return;
@@ -86,8 +106,8 @@ function createDropdown(selector, label = "Select", initialItems = [], onChange 
 
   container.innerHTML = `
     <div class="base blue row">
-      <label class="base gray left">${label}</label>
-      <select id="${dropdownId}" class="base blue interactive flex-2"></select>
+      <label class="base gray left flex-1">${label}</label>
+      <select id="${dropdownId}" class="base blue interactive flex-3 left"></select>
     </div>
   `;
 
@@ -113,13 +133,85 @@ function createDropdown(selector, label = "Select", initialItems = [], onChange 
       items.forEach(item => {
         const option = document.createElement("option");
         option.value = item.value ?? item;
-        option.textContent = item.label?.toLowerCase() ?? item.toLowerCase();
+        option.textContent = item.label ?? item;
         select.appendChild(option);
       });
     },
     getValue: function () {
       return select.value;
     }
+  };
+}
+
+function createEffectsListView(selector, onDelete = null) {
+  const container = document.querySelector(selector);
+  if (!container) return;
+
+  container.innerHTML = `
+    <div class="effects-list-container base blue">
+      <div class="scroll-list"></div>
+    </div>
+  `;
+
+  const listContent = container.querySelector(".scroll-list");
+
+  // Internal reference to primary/secondary elements for each row
+  const rowElements = [];
+
+  function load(data) {
+    if (!data || !Array.isArray(data.effects)) return;
+
+    listContent.innerHTML = ""; // Clear previous items
+    rowElements.length = 0; // Clear stored row references
+
+    data.effects.forEach((effect, index) => {
+      const row = document.createElement("div");
+      row.className = "row";
+
+      const primary = document.createElement("div");
+      primary.className = "base gray flex-2";
+      primary.textContent = `Primary: ${effect.primary}`;
+
+      const secondary = document.createElement("div");
+      secondary.className = "base gray flex-2";
+      secondary.textContent = `Secondary: ${effect.secondary ?? "None"}`;
+
+      const delBtn = document.createElement("div");
+      if (data.name === "static" || data.name === "dynamic") {
+        delBtn.className = "base red interactive button disabled";
+        delBtn.textContent = "Cannot Delete";
+      } else {
+        delBtn.className = "base red interactive button";
+        delBtn.textContent = "Delete";
+      }
+
+      delBtn.addEventListener("click", () => {
+        if (onDelete) onDelete(index, effect);
+      });
+
+      row.appendChild(primary);
+      row.appendChild(secondary);
+      row.appendChild(delBtn);
+      listContent.appendChild(row);
+
+      // Store references for highlighting later
+      rowElements.push({ primary, secondary });
+    });
+  }
+
+  function setActive(index) {
+    console.log(`Setting active effect to index: ${index}`);
+    rowElements.forEach((elements, i) => {
+      const isActive = i === index;
+
+      elements.primary.className = `base ${isActive ? 'green' : 'gray'} flex-2`;
+      elements.secondary.className = `base ${isActive ? 'green' : 'gray'} flex-2`;
+    });
+  }
+
+  return {
+    load,
+    setActive
   };
 }
 

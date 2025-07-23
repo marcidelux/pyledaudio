@@ -1,13 +1,16 @@
 <!DOCTYPE html>
 <html>
+
 <head>
   <title>LED Controller</title>
   <script src="chart.js"></script>
   <style>
-    html, body {
+    html,
+    body {
       margin: 0;
       height: 100%;
       background-color: gray;
+      overflow: hidden;
     }
 
     body {
@@ -17,7 +20,8 @@
 
     #chartContainer {
       flex-grow: 1;
-      height: calc(100% - 60px); /* Adjust based on your top area height */
+      height: calc(100% - 60px);
+      /* Adjust based on your top area height */
     }
 
     #bandChart {
@@ -26,6 +30,7 @@
     }
   </style>
 </head>
+
 <body>
 
   <div id="chartContainer">
@@ -78,4 +83,5 @@
     initChart();
   </script>
 </body>
+
 </html>

@@ -1,15 +1,16 @@
 /* PICO-8 Font https://github.com/MalphasWats/computing.codes/blob/gh-pages/style/assets/fonts/pico-8.ttf*/
 @font-face {
-    font-family: 'PICO-8';
-    src: url('pico-8.ttf') format('truetype');
+    font-family: 'PRESSTART2P';
+    src: url('PressStart2P.ttf') format('truetype');
+    /* src: url('pico-8.ttf') format('truetype'); */
 }
 
 * {
-    font-family: 'PICO-8', monospace;
+    font-family: 'PRESSTART2P', monospace;
     font-size: 1.1rem;
     line-height: 1.4rem;
     box-sizing: border-box;
-    overflow: hidden;
+    overflow: visible;
 }
 
 html,
@@ -172,6 +173,9 @@ canvas {
     display: flex;
     flex-direction: row;
     margin-top: 4px;
+    height: 60px;
+    flex-shrink: 0;
+    /* PREVENTS collapse */
 }
 
 .col {
@@ -200,6 +204,17 @@ canvas {
 .button:active {
     box-shadow: none;
     transform: translateY(4px);
+}
+
+.button.disabled {
+    pointer-events: none;
+    opacity: 0.5;
+    box-shadow: none;
+    transform: none;
+    cursor: not-allowed;
+    background: var(--c5);
+    color: var(--c7);
+    border-color: var(--c6);
 }
 
 .slider {
@@ -332,10 +347,17 @@ canvas {
     min-width: 1398px;
 }
 
+.effects-list-container {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
 .scroll-list {
-    max-height: 440px;
+    height: 260px;
     overflow-y: auto;
-    padding-right: 5px;
+    display: block;
+    /* IMPORTANT: disables flex behavior messing with height */
 }
 
 .scroll-list::-webkit-scrollbar {

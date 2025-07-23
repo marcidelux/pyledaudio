@@ -35,7 +35,6 @@ class Snake(Effect):
                 colors.WHITE, colors.ORANGE
             ]
         )
-        self.pyramid = DigitalPyramid()
         self.previous_time = time.time()
         self.previous_spawn_time = self.previous_time
         self.spawn_time = 1
@@ -46,7 +45,7 @@ class Snake(Effect):
 
         self.pyramid.connect_all_particle_lines()
 
-    def update(self) -> List[Command] | None:
+    def update(self) -> None:
         current_time = time.time()
 
         if current_time - self.previous_time < self.config.update_speed:
@@ -74,6 +73,8 @@ class Snake(Effect):
 
         self.pyramid.update(current_time)
         self.previous_time = current_time
+
+    def get_commands(self) -> List[Command]:
         return self.pyramid.cmds
 
 

@@ -26,14 +26,12 @@ class SpectrumTriangles(Effect):
             colors.CYAN, colors.MAGENTA,
             colors.WHITE
         ])
-
-        self.pyramid = DigitalPyramid()
         self.idx_mod = 0
         self.pixel_mod = 0
         self.beat_cntr = 0
 
-    def update(self, audio_info: Optional[AudioInfo] = None) -> List[Command] | None:
-        if audio_info.bands is None:
+    def update(self, audio_info: Optional[AudioInfo] = None) -> None:
+        if audio_info is None:
             return None
 
         self.pyramid.clear()
@@ -55,6 +53,7 @@ class SpectrumTriangles(Effect):
             self.pyramid.triangle_bottom_groups[idx].set_all(pixel)
             self.pyramid.triangle_side_groups[idx].set_all(pixel)
 
+    def get_commands(self) -> List[Command]:
         return self.pyramid.cmds
 
 

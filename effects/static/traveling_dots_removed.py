@@ -58,12 +58,14 @@ class TravelingDots(Effect):
         self.section_C[idx] = colors.BLUE
         self.step_C += 1
 
-    def update(self) -> List[Command]:
+    def update(self) -> None:
         current_time = time.time()
         if current_time - self.previous_time < self.config.update_speed:
             self.demo_full_section_A()
             self.demo_full_section_B()
             self.demo_full_section_C()
+
+    def get_commands(self) -> List[Command]:
         return [
             self.cmd_section_A,
             self.cmd_section_B,

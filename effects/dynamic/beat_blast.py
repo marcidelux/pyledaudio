@@ -29,7 +29,6 @@ class BeatBlast(Effect):
             colors.CYAN, colors.MAGENTA,
             colors.WHITE
         ])
-        self.pyramid = DigitalPyramid()
         self.previous_time = time.time()
 
         self.pyramid.lines_A[0].gate_tail.append([
@@ -66,7 +65,7 @@ class BeatBlast(Effect):
             (self.pyramid.lines_B[2], EndType.TAIL),
         ])
 
-    def update(self, audio_info: Optional[AudioInfo] = None) -> List[Command] | None:
+    def update(self, audio_info: Optional[AudioInfo] = None) -> None:
         current_time = time.time()
 
         if audio_info.beat_detected:
@@ -100,12 +99,11 @@ class BeatBlast(Effect):
             self.pyramid.lines_A.add_particle(particle2)
 
         self.pyramid.update(self.previous_time)
-        # self.pyramid.lines_A.set_intensity(audio_info.bands[2])
-        # self.pyramid.lines_B.set_intensity(audio_info.bands[3])
-        # self.pyramid.lines_C.set_intensity(audio_info.bands[4])
 
         self.previous_time = current_time
-        return [self.pyramid.cmd_A, self.pyramid.cmd_B, self.pyramid.cmd_C]
+
+    def get_commands(self) -> List[Command]:
+        return self.pyramid.cmds
 
 
 beat_blast = BeatBlast()

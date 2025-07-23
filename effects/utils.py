@@ -632,33 +632,6 @@ class Command:
         return f"Command(type={self.type}, section_id={self.section_id}, segment_ids={self.segment_ids}, pixels={self.pixels})"
 
 
-def merge_command_lists(a: list[Command], b: list[Command]) -> list[Command]:
-    merged_pairs: list[tuple[Command, Command]] = []
-    unique_a: list[Command] = []
-    unique_b = b.copy()
-
-    a_copy = a.copy()
-
-    for cmd_a in a_copy:
-        found_pair = False
-        for cmd_b in unique_b:
-            if cmd_a.type == cmd_b.type and cmd_a.section_id == cmd_b.section_id:
-                if set(cmd_a.segment_ids) & set(cmd_b.segment_ids):
-                    merged_pairs.append((cmd_a, cmd_b))
-                    unique_b.remove(cmd_b)
-                    found_pair = True
-                    break
-        if not found_pair:
-            unique_a.append(cmd_a)
-
-    # Merge the found pairs using your Command.__add__()
-    merged_cmds: list[Command] = []
-    for a_cmd, b_cmd in merged_pairs:
-        merged_cmds.extend(a_cmd + b_cmd)
-
-    return merged_cmds + unique_a + unique_b
-
-
 # Digital Pyramid
 class DigitalPyramid:
     def __init__(self):
@@ -881,6 +854,7 @@ class Effect(ABC):
     def __init__(self):
         self.config = None  # Must be initialized by the child class
         self.is_dynamic = False  # Indicates if the effect is dynamic or static
+        self.pyramid = DigitalPyramid()
 
     def get_config(self) -> dict[str, Any]:
         config_dict = asdict(self.config)
@@ -912,7 +886,12 @@ class Effect(ABC):
 
     """Calculate the effect based on the provided band levels."""
     @abstractmethod
-    def update(self, audio_info: Optional[AudioInfo] = None) -> List[Command]:
+    def update(self, audio_info: Optional[AudioInfo] = None) -> None:
+        pass
+
+    """Get the commands to be sent to the device."""
+    @abstractmethod
+    def get_commands(self) -> List[Command]:
         pass
 
 
