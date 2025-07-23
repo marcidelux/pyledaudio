@@ -8,26 +8,11 @@ from effects.utils import cmd_turn_off, Command
 from udp import config as udp_config
 from udp.client import udp_client
 from api import server, config as api_config
+from api.broadcasters import bands_queue, leds_queue
 from state import state_manager
 from typing import List
 import numpy as np
 import time
-
-music_turned_off = False
-last_time = time.time()
-switch_time = 10
-
-
-def send_bands_to_client(band_levels: bytes) -> None:
-    # Only put data into queue if ready
-    if server.broadcast_queue is not None:
-        server.broadcast_queue.put_nowait(band_levels)
-
-
-def send_leds_to_client(data: bytes) -> None:
-    # Only put data into queue if ready
-    if server.leds_broadcast_queue is not None:
-        server.leds_broadcast_queue.put_nowait(data)
 
 
 fpscntr = 0
@@ -43,6 +28,18 @@ def count_fps() -> None:
         last_time = current_time
     else:
         fpscntr += 1
+
+
+def send_bands_to_client(band_levels: bytes) -> None:
+    # Only put data into queue if ready
+    if bands_queue is not None:
+        bands_queue.put_nowait(band_levels)
+
+
+def send_leds_to_client(data: bytes) -> None:
+    # Only put data into queue if ready
+    if leds_queue is not None:
+        leds_queue.put_nowait(data)
 
 
 def display_bands(audio_chunk: np.ndarray) -> None:
@@ -93,20 +90,24 @@ def on_effect_change() -> None:
 
 def init():
     audioProcessor.list_audio_devices()
+
     conf_dict = config.get_config_dict()
     audio_config.set_config(conf_dict)
     udp_config.set_config(conf_dict)
     api_config.set_config(conf_dict)
     effects_config.set_config(conf_dict)
+
     audioProcessor.setup(display_effects)
     effect_manager.set_on_change_callback(on_effect_change)
+
     server.start()
+    audioProcessor.start()
+
     print("Server started")
 
 
 if __name__ == "__main__":
     init()
-    audioProcessor.start()
 
     try:
         while True:
