@@ -1,5 +1,6 @@
 from pydantic import BaseModel
 from typing import Optional
+from effects.list_manager import EffectPair
 
 
 class PowerRequest(BaseModel):
@@ -10,15 +11,11 @@ class BrightnessRequest(BaseModel):
     brightness: Optional[int] = None
 
 
-class EffectPreviewRequest(BaseModel):
-    effect: Optional[str] = None
-    primary: Optional[bool] = None
-
-
-class SelectEffectsListRequest(BaseModel):
+class AddEffectListRequest(BaseModel):
     name: str
+    switch_interval: Optional[int]
+    effects: Optional[EffectPair]
 
 
-class AddEffectPairToCurrentListRequest(BaseModel):
-    primary: str
-    secondary: Optional[str] = None
+class SelectCurrentEffectByIndexRequest(BaseModel):
+    index: int

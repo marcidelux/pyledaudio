@@ -55,6 +55,3 @@ class SpectrumTriangles(Effect):
 
     def get_commands(self) -> List[Command]:
         return self.pyramid.cmds
-
-
-spectrum_triangles = SpectrumTriangles()

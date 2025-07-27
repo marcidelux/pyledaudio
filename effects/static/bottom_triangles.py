@@ -72,6 +72,3 @@ class BottomTriangles(Effect):
 
     def get_commands(self) -> List[Command]:
         return [self.pyramid.cmd_A, self.pyramid.cmd_B, self.pyramid.cmd_C]
-
-
-bottom_triangles = BottomTriangles()

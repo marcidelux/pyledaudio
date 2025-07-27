@@ -54,6 +54,3 @@ class Spectrum4(Effect):
 
     def get_commands(self) -> List[Command]:
         return [self.segments_A, self.segments_C]
-
-
-spectrum4 = Spectrum4()

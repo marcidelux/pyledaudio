@@ -439,6 +439,11 @@ class ParticleLine:
         """
         self.particles.append(particle)
 
+    def clear(self):
+        self.particles.clear()
+        self.gate_head.previously_passed = False
+        self.gate_tail.previously_passed = False
+
 
 class ParticleLineGroup:
     def __init__(self,):
@@ -483,6 +488,10 @@ class ParticleLineGroup:
     def set_intensity(self, intensity: uint8):
         for line in self.lines:
             line.set_intensity(intensity)
+
+    def clear(self):
+        for line in self.lines:
+            line.clear()
 
 
 class Command:
@@ -799,6 +808,9 @@ class DigitalPyramid:
         self.lines_C.update(update_time)
 
     def clear(self):
+        self.lines_A.clear()
+        self.lines_B.clear()
+        self.lines_C.clear()
         self.section_A.set_all(colors.BLACK)
         self.section_B.set_all(colors.BLACK)
         self.section_C.set_all(colors.BLACK)
@@ -843,11 +855,18 @@ class DigitalPyramid:
                 "Can only combine with another DigitalPyramid instance")
 
         # Combine sections A, B, and C
-        self.section_A += other.section_A
-        self.section_B += other.section_B
-        self.section_C += other.section_C
+        combined_section_A = self.section_A + other.section_A
+        combined_section_B = self.section_B + other.section_B
+        combined_section_C = self.section_C + other.section_C
 
-        return self.cmds
+        combined_cmd_A = Command(Command.COMMAND_TYPE_FULL_SECTION,
+                                 Command.SECTION_ID_A, bytearray(), combined_section_A)
+        combined_cmd_B = Command(Command.COMMAND_TYPE_FULL_SECTION,
+                                 Command.SECTION_ID_B, bytearray(), combined_section_B)
+        combined_cmd_C = Command(Command.COMMAND_TYPE_FULL_SECTION,
+                                 Command.SECTION_ID_C, bytearray(), combined_section_C)
+
+        return [combined_cmd_A, combined_cmd_B, combined_cmd_C]
 
 
 class Effect(ABC):
@@ -883,6 +902,10 @@ class Effect(ABC):
             setattr(self.config, key, value)
         else:
             raise KeyError(f"Config has no field named '{key}'")
+
+    def clear(self) -> None:
+        """Clear the effect state."""
+        self.pyramid.clear()
 
     """Calculate the effect based on the provided band levels."""
     @abstractmethod

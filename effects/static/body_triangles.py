@@ -50,6 +50,3 @@ class BodyTriangles(Effect):
 
     def get_commands(self) -> List[Command]:
         return [self.pyramid.cmd_A, self.pyramid.cmd_C]
-
-
-body_triangles = BodyTriangles()

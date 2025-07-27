@@ -1,18 +1,38 @@
 // pico-slider.js
 
+function createTextInput(selector, label = "Text", placeholder = "") {
+  const container = document.querySelector(selector);
+  if (!container) return;
+
+  container.innerHTML = `
+    <div class="base blue row">
+      <label class="base gray left flex-1">${label}</label>
+      <input type="text" class="base blue interactive flex-3 left" placeholder="${placeholder}" />
+    </div>
+  `;
+
+  const input = container.querySelector("input");
+
+  return {
+    getValue: () => input.value,
+    setValue: (val) => { input.value = val; },
+  };
+}
+
+
 function createSlider(selector, min = 0, max = 100, initial = 50, label = "Slider", onChange = null) {
   const container = document.querySelector(selector);
   if (!container) return;
 
   container.innerHTML = `
-    <div class="base blue">
-      <div class="row">
-        <span class="base left gray">${label}</span>
-        <div class="base interactive button red decrement" style="width: 40px;">&lt;</div>
-        <div class="base flex-4" style="padding: 0;"><input type="range" min="${min}" max="${max}" value="${initial}" id="slider" class="slider"></div>
-        <div class="base interactive button green increment" style="width: 40px;">&gt;</div>
-        <span class="base flex-1 value right">${initial}</span>
+    <div class="row base blue" style="align-items: center;">
+      <span class="base left gray">${label}</span>
+      <div class="base interactive button red decrement" style="width: 40px;">&lt;</div>
+      <div class="base flex-4" style="padding: 0;">
+        <input type="range" min="${min}" max="${max}" value="${initial}" id="slider" class="slider">
       </div>
+      <div class="base interactive button green increment" style="width: 40px;">&gt;</div>
+      <span class="base flex-1 value right">${initial}</span>
     </div>
   `;
 
@@ -98,6 +118,54 @@ function createButton(selector, label = "Click Me", onClick = null, color = "blu
   }
 }
 
+function createDeleteButton(selector, label = "Delete", onClick = null, color = "red") {
+  const container = document.querySelector(selector);
+  if (!container) return;
+
+  container.innerHTML = `
+    <div class="row">
+      <div class="base interactive button ${color} flex-1 delete-button">
+        ${label}
+      </div>
+    </div>
+  `;
+
+  const button = container.querySelector(".delete-button");
+
+  let currentOnClick = onClick;
+
+  const setOnClick = (newHandler) => {
+    currentOnClick = newHandler;
+  };
+
+  const updateDisable = (name) => {
+    const isProtected = name === "static" || name === "dynamic";
+
+    if (isProtected) {
+      button.classList.remove("red");
+      button.classList.add("gray", "disabled");
+      button.textContent = "Cannot Delete";
+      button.onclick = null;
+    } else {
+      button.classList.remove("gray", "disabled");
+      button.classList.add("red");
+      button.textContent = "Delete";
+      button.onclick = () => {
+        if (currentOnClick) currentOnClick();
+      };
+    }
+  };
+
+  // Initial click binding
+  updateDisable("normal");
+
+  return {
+    updateDisable,
+    setOnClick
+  };
+}
+
+
 function createDropdown(selector, label = "Select", initialItems = [], onChange = null) {
   const container = document.querySelector(selector);
   if (!container) return;
@@ -106,7 +174,7 @@ function createDropdown(selector, label = "Select", initialItems = [], onChange 
 
   container.innerHTML = `
     <div class="base blue row">
-      <label class="base gray left flex-1">${label}</label>
+      <label class="base gray left">${label}</label>
       <select id="${dropdownId}" class="base blue interactive flex-3 left"></select>
     </div>
   `;
@@ -139,11 +207,19 @@ function createDropdown(selector, label = "Select", initialItems = [], onChange 
     },
     getValue: function () {
       return select.value;
+    },
+    setValue: function (value) {
+      const option = Array.from(select.options).find(opt => opt.value === value);
+      if (!option) {
+        console.warn(`Option with value "${value}" not found in dropdown "${label}"`);
+        return;
+      }
+      select.value = value;
     }
   };
 }
 
-function createEffectsListView(selector, onDelete = null) {
+function createEffectsListView(selector, onDelete) {
   const container = document.querySelector(selector);
   if (!container) return;
 
@@ -170,11 +246,11 @@ function createEffectsListView(selector, onDelete = null) {
 
       const primary = document.createElement("div");
       primary.className = "base gray flex-2";
-      primary.textContent = `Primary: ${effect.primary}`;
+      primary.textContent = `${effect.primary}`;
 
       const secondary = document.createElement("div");
       secondary.className = "base gray flex-2";
-      secondary.textContent = `Secondary: ${effect.secondary ?? "None"}`;
+      secondary.textContent = `${effect.secondary ?? "None"}`;
 
       const delBtn = document.createElement("div");
       if (data.name === "static" || data.name === "dynamic") {
@@ -186,7 +262,7 @@ function createEffectsListView(selector, onDelete = null) {
       }
 
       delBtn.addEventListener("click", () => {
-        if (onDelete) onDelete(index, effect);
+        onDelete(data.name, effect.primary, effect.secondary);
       });
 
       row.appendChild(primary);

@@ -4,7 +4,7 @@
         "switch_interval": 30,
         "effects": [
             {
-                "primary": "BottomTriangles",
+                "primary": "SpectrumTriangles",
                 "secondary": null
             },
             {
@@ -44,14 +44,16 @@
             {
                 "primary": "SpectrumTwoLines",
                 "secondary": null
-            },
+            }
+        ]
+    },
+    {
+        "name": "kaka",
+        "switch_interval": 30,
+        "effects": [
             {
-                "primary": "BottomTriangles",
-                "secondary": "SpectrumTriangles"
-            },
-            {
-                "primary": "BottomTriangles",
-                "secondary": null
+                "primary": "BeatBlast",
+                "secondary": "SpectrumTwoLines"
             }
         ]
     }

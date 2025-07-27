@@ -51,6 +51,3 @@ class SideTriangles(Effect):
 
     def get_commands(self) -> List[Command]:
         return [self.pyramid.cmd_B, self.pyramid.cmd_C]
-
-
-side_triangles = SideTriangles()

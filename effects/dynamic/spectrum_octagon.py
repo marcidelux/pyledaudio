@@ -40,6 +40,3 @@ class SpectrumOctagon(Effect):
 
     def get_commands(self) -> List[Command]:
         return self.pyramid.cmds
-
-
-spectrum_octagon = SpectrumOctagon()

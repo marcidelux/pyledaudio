@@ -4,7 +4,6 @@ from typing import Optional, List
 from ..utils import (
     Command,
     Effect,
-    DigitalPyramid,
     colors,
     Pixel,
     AudioInfo,
@@ -104,6 +103,3 @@ class BeatBlast(Effect):
 
     def get_commands(self) -> List[Command]:
         return self.pyramid.cmds
-
-
-beat_blast = BeatBlast()

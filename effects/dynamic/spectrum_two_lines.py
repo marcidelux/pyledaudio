@@ -52,6 +52,3 @@ class SpectrumTwoLines(Effect):
 
     def get_commands(self) -> List[Command]:
         return self.pyramid.cmds
-
-
-spectrum_two_lines = SpectrumTwoLines()

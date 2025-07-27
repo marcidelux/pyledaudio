@@ -77,6 +77,3 @@ class BeatOctagon(Effect):
 
     def get_commands(self) -> List[Command]:
         return self.pyramid.cmds
-
-
-beat_octagon = BeatOctagon()
