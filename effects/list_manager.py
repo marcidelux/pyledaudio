@@ -9,6 +9,14 @@ class EffectPair(BaseModel):
     primary: str
     secondary: Optional[str] = None
 
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, EffectPair):
+            raise NotImplementedError(
+                f"Cannot compare EffectPair with {type(other)}")
+
+        return (self.primary == other.primary and self.secondary == other.secondary) or \
+            (self.primary == other.secondary and self.secondary == other.primary)
+
 
 class EffectList(BaseModel):
     name: str
@@ -122,8 +130,8 @@ class ListsManager:
                 f"Cannot add effects to static or dynamic lists.")
             return HTTPStatus.BAD_REQUEST
 
-        for exiting in existing_list.effects:
-            if exiting.primary == effect_pair.primary and exiting.secondary == effect_pair.secondary:
+        for existing in existing_list.effects:
+            if existing == effect_pair:
                 print(
                     f"EffectPair {effect_pair} already exists in list '{list_name}'.")
                 return HTTPStatus.CONFLICT

@@ -81,6 +81,7 @@ def display_effects(audio_info: AudioInfo) -> None:
         for command in commands:
             cmd_bytes = command.to_bytes()
             send_leds_to_client(cmd_bytes)
+            udp_client.send_bytes(cmd_bytes)
 
 
 def on_effect_change() -> None:
@@ -89,13 +90,12 @@ def on_effect_change() -> None:
 
 
 def init():
-    audioProcessor.list_audio_devices()
-
     conf_dict = config.get_config_dict()
     audio_config.set_config(conf_dict)
     udp_config.set_config(conf_dict)
     api_config.set_config(conf_dict)
     effects_config.set_config(conf_dict)
+    udp_config.set_config(conf_dict)
 
     audioProcessor.setup(display_effects)
     effect_manager.set_on_change_callback(on_effect_change)

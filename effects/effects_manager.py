@@ -14,8 +14,10 @@ from .dynamic.spectrum_triangles import SpectrumTriangles
 from .dynamic.spectrum_two_lines import SpectrumTwoLines
 from .dynamic.beat_blast import BeatBlast
 from .dynamic.beat_octagon import BeatOctagon
+from .dynamic.vu_two_lines import VuTwoLines
+from .dynamic.vu_two_lines_top import VuTwoLinesTop
 
-from .list_manager import EffectPair, EffectList, ListsManager, print_effect_lists
+from .list_manager import EffectPair, EffectList, ListsManager
 
 
 class EffectManager:
@@ -25,6 +27,8 @@ class EffectManager:
     spectrum_octagon: SpectrumOctagon = SpectrumOctagon()
     spectrum_triangles: SpectrumTriangles = SpectrumTriangles()
     spectrum_two_lines: SpectrumTwoLines = SpectrumTwoLines()
+    vu_two_lines: VuTwoLines = VuTwoLines()
+    vu_two_lines_top: VuTwoLinesTop = VuTwoLinesTop()
 
     # Static effects
     bottom_triangles: BottomTriangles = BottomTriangles()
@@ -41,7 +45,9 @@ class EffectManager:
         beat_blast.config.name: beat_blast,
         beat_octagon.config.name: beat_octagon,
         spectrum_two_lines.config.name: spectrum_two_lines,
-        snake.config.name: snake
+        snake.config.name: snake,
+        vu_two_lines.config.name: vu_two_lines,
+        vu_two_lines_top.config.name: vu_two_lines_top
     }
 
     dynamic_names: list[str] = [
@@ -49,13 +55,17 @@ class EffectManager:
         spectrum_triangles.config.name,
         beat_blast.config.name,
         beat_octagon.config.name,
-        spectrum_two_lines.config.name]
+        spectrum_two_lines.config.name,
+        vu_two_lines.config.name,
+        vu_two_lines_top.config.name
+    ]
 
     static_names: list[str] = [
         bottom_triangles.config.name,
         side_triangles.config.name,
         body_triangles.config.name,
-        snake.config.name]
+        snake.config.name
+    ]
 
     def __init__(self):
         self._effects_map = EffectManager.all_effects_map

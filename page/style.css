@@ -172,9 +172,15 @@ canvas {
 .row {
     display: flex;
     flex-direction: row;
-    margin-top: 4px;
+    margin: 6px 0;
+    gap: 4px;
     height: 60px;
-    flex-shrink: 0;
+    padding: 4px;
+    border: 2px solid var(--c9);
+    /* visible orange border */
+    border-radius: 6px;
+    background-color: var(--c1);
+    /* optional for contrast */
 }
 
 .col {

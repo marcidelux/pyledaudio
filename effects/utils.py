@@ -203,13 +203,37 @@ class PixelGroup:
             index -= len(view)
         raise IndexError("PixelGroup index out of range")
 
-    def __setitem__(self, index: int, value: Pixel):
-        for view in self.views:
-            if index < len(view):
-                view[index] = value
-                return
-            index -= len(view)
-        raise IndexError("PixelGroup index out of range")
+    def __setitem__(self, index: int | slice, value: Pixel):
+        if isinstance(index, int):
+            for view in self.views:
+                if index < len(view):
+                    view[index] = value
+                    return
+                index -= len(view)
+            raise IndexError("PixelGroup index out of range")
+
+        elif isinstance(index, slice):
+            start, stop, step = index.indices(len(self))
+            if step != 1:
+                raise NotImplementedError("Only step=1 is supported")
+
+            current = 0
+            for view in self.views:
+                view_len = len(view)
+                for i in range(view_len):
+                    global_idx = current + i
+                    if global_idx >= stop:
+                        return
+                    if global_idx >= start:
+                        view[i] = value
+                current += view_len
+
+            # If we exit the loop without setting all values, raise error
+            if current < stop:
+                raise IndexError("PixelGroup slice out of range")
+
+        else:
+            raise TypeError("Index must be int or slice")
 
     def __bytes__(self) -> bytes:
         return b''.join(bytes(view) for view in self.views)
