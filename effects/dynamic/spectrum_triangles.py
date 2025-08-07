@@ -1,11 +1,10 @@
 from dataclasses import dataclass
-from typing import Optional, List
+from typing import Optional
 from ..utils import (
-    Command,
+    PyramidSimpleCommands,
     Effect,
     colors,
     Pixel,
-    DigitalPyramid,
     AudioInfo
 )
 
@@ -53,5 +52,5 @@ class SpectrumTriangles(Effect):
             self.pyramid.triangle_bottom_groups[idx].set_all(pixel)
             self.pyramid.triangle_side_groups[idx].set_all(pixel)
 
-    def get_commands(self) -> List[Command]:
+    def get_commands(self) -> PyramidSimpleCommands:
         return self.pyramid.cmds

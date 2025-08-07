@@ -2,11 +2,9 @@ import time
 from dataclasses import dataclass
 from typing import List
 from ..utils import (
-    Command,
     Effect,
     Pixel,
-    DigitalPyramid,
-    Colors,
+    PyramidSimpleCommands,
     Particle,
     EndType
 )
@@ -70,5 +68,5 @@ class BottomTriangles(Effect):
 
         self.previous_time = current_time
 
-    def get_commands(self) -> List[Command]:
-        return [self.pyramid.cmd_A, self.pyramid.cmd_B, self.pyramid.cmd_C]
+    def get_commands(self) -> PyramidSimpleCommands:
+        return self.pyramid.cmds

@@ -11,6 +11,7 @@ from . import config
 from .broadcasters import (
     bands_broadcaster_loop,
     led_broadcaster_loop,
+    udp_sender_loop,
     register_websockets
 )
 from .endpoints import register_endpoints
@@ -37,6 +38,8 @@ def start():
 
         loop.create_task(bands_broadcaster_loop())
         loop.create_task(led_broadcaster_loop())
+        loop.create_task(udp_sender_loop())
+
         loop.run_until_complete(server_instance.serve())
 
     thread = threading.Thread(target=run, daemon=True)

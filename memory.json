@@ -18,6 +18,10 @@
             {
                 "primary": "Snake",
                 "secondary": null
+            },
+            {
+                "primary": "BigSnake",
+                "secondary": null
             }
         ]
     },
@@ -52,16 +56,6 @@
             {
                 "primary": "VuTwoLinesTop",
                 "secondary": null
-            }
-        ]
-    },
-    {
-        "name": "t1",
-        "switch_interval": 30,
-        "effects": [
-            {
-                "primary": "SpectrumOctagon",
-                "secondary": "BottomTriangles"
             }
         ]
     }

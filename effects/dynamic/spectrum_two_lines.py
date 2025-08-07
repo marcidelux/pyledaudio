@@ -1,11 +1,10 @@
 from dataclasses import dataclass
-from typing import Optional, List
+from typing import Optional
 from ..utils import (
-    Command,
+    PyramidSimpleCommands,
     Effect,
     colors,
     Pixel,
-    DigitalPyramid,
     AudioInfo
 )
 
@@ -50,5 +49,5 @@ class SpectrumTwoLines(Effect):
                 audio_info.bands[i % num_bands])
             self.pyramid.two_lines_body_groups[idx].set_all(pixel)
 
-    def get_commands(self) -> List[Command]:
+    def get_commands(self) -> PyramidSimpleCommands:
         return self.pyramid.cmds

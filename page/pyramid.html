@@ -102,8 +102,8 @@
 
         const colors = [];
         for (let j = 0; j < config.ledsPerSegment; j++) {
-          const g = segmentData[j * 3];
-          const r = segmentData[j * 3 + 1];
+          const r = segmentData[j * 3];
+          const g = segmentData[j * 3 + 1];
           const b = segmentData[j * 3 + 2];
           colors.push(new THREE.Color(r / 255, g / 255, b / 255));
         }
@@ -167,28 +167,10 @@
     socket.onmessage = function (event) {
       const sectionIdMap = ['A', 'B', 'C'];
       const data = new Uint8Array(event.data);
-      const type = data[0];
+      const packet_id = data[0];
       const sectionId = sectionIdMap[data[1]];
-      const payloadLen = (data[2] << 8) | data[3];
-
-      if (type === 0) {
-        clearAllLines();
-      } else if (type === 1) {
-        const pixelData = data.slice(4, 4 + payloadLen);
-        applyToSection(sectionId, pixelData);
-      } else if (type === 2) {
-        const ledsPerSegment = sectionConfig[sectionId].ledsPerSegment;
-        const segmentDataLength = ledsPerSegment * 3;
-        const segmentCount = payloadLen - segmentDataLength;
-
-        const segmentIds = data.slice(4, 4 + segmentCount);
-        const colorStart = 4 + segmentCount;
-        const segmentData = data.slice(colorStart, colorStart + segmentDataLength);
-
-        for (let i = 0; i < segmentIds.length; i++) {
-          applyToSegment(sectionId, segmentIds[i], segmentData);
-        }
-      }
+      const pixelData = data.slice(2);
+      applyToSection(sectionId, pixelData);
     };
 
     // Animate

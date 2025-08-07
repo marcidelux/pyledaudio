@@ -1,5 +1,5 @@
 # UDP DATA FOR ESP32
-UDP_IP = '192.168.100.150'
+UDP_IP = '192.168.60.150'
 UDP_PORT = 12345
 SERVER_GUI = True
 
@@ -17,7 +17,7 @@ MAX_FREQUENCY = 18000
 """Frequencies above this value will be removed during audio processing"""
 
 SAMPLING_FREQUENCY = 300
-DISPLAY_FREQUENCY = 24
+DISPLAY_FREQUENCY = 30
 
 N_FFT_BINS = 8
 """Number of frequency bins to use when transforming audio to frequency domain"""

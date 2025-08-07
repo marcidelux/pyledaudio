@@ -3,9 +3,8 @@ from dataclasses import dataclass
 from typing import Optional, List
 import random
 from ..utils import (
-    Command,
+    PyramidSimpleCommands,
     Effect,
-    DigitalPyramid,
     colors,
     Pixel,
     AudioInfo,
@@ -75,5 +74,5 @@ class BeatOctagon(Effect):
         self.pyramid.update(self.previous_time)
         self.previous_time = current_time
 
-    def get_commands(self) -> List[Command]:
+    def get_commands(self) -> PyramidSimpleCommands:
         return self.pyramid.cmds

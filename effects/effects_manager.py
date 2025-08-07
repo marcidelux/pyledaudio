@@ -8,6 +8,7 @@ from .static.bottom_triangles import BottomTriangles
 from .static.side_triangles import SideTriangles
 from .static.body_triangles import BodyTriangles
 from .static.snake import Snake
+from .static.big_snake import BigSnake
 
 from .dynamic.spectrum_octagon import SpectrumOctagon
 from .dynamic.spectrum_triangles import SpectrumTriangles
@@ -35,6 +36,7 @@ class EffectManager:
     side_triangles: SideTriangles = SideTriangles()
     body_triangles: BodyTriangles = BodyTriangles()
     snake: Snake = Snake()
+    big_snake: BigSnake = BigSnake()
 
     all_effects_map: dict[str, Effect] = {
         spectrum_octagon.config.name: spectrum_octagon,
@@ -46,6 +48,7 @@ class EffectManager:
         beat_octagon.config.name: beat_octagon,
         spectrum_two_lines.config.name: spectrum_two_lines,
         snake.config.name: snake,
+        big_snake.config.name: big_snake,
         vu_two_lines.config.name: vu_two_lines,
         vu_two_lines_top.config.name: vu_two_lines_top
     }
@@ -64,7 +67,8 @@ class EffectManager:
         bottom_triangles.config.name,
         side_triangles.config.name,
         body_triangles.config.name,
-        snake.config.name
+        snake.config.name,
+        big_snake.config.name
     ]
 
     def __init__(self):

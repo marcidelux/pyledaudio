@@ -7,6 +7,7 @@ from typing import List, Any, Optional, Dict, Literal, Tuple, Union
 from numpy import uint8
 from time import time
 from enum import Enum
+import colorsys
 
 
 @dataclass
@@ -51,7 +52,7 @@ class Pixel:
         )
 
     def __bytes__(self) -> bytes:
-        return bytes([self.g, self.r, self.b])
+        return bytes([self.r, self.g, self.b])
 
     def __repr__(self):
         return f"(r:{self.r}, g:{self.g}, b:{self.b})"
@@ -264,7 +265,8 @@ class Particle:
                  lifetime: float,
                  update_speed: float,
                  fade_time: float = None,
-                 time_of_creation: float = time()
+                 time_of_creation: float = time(),
+                 hue_delta: float = None
                  ):
         self.color = color
         self.position = position
@@ -276,10 +278,27 @@ class Particle:
         self.fade_time = fade_time
         self.step = direction * speed
         self.fade_factor = 1
+        self.hue_delta_ = hue_delta
+
+        if hue_delta is not None:
+            r, g, b = self.color.r / 255, self.color.g / 255, self.color.b / 255
+            h, _, v = colorsys.rgb_to_hsv(r, g, b)
+            self.hue_ = h  # initial hue
+            self.value_ = v  # optional: keep original brightness
+
+    def apply_hue(self):
+        self.hue_ = (self.hue_ + self.hue_delta_) % 1.0
+        r, g, b = colorsys.hsv_to_rgb(self.hue_, 1.0, self.value_)
+        self.color = Pixel(
+            uint8(r * 255), uint8(g * 255), uint8(b * 255)
+        )
 
     def update(self, current_time: float = time()):
         time_passed = current_time - self._last_update
         self.lifetime -= time_passed
+
+        if self.hue_delta_ is not None:
+            self.apply_hue()
 
         if self.fade_time and self.lifetime < self.fade_time:
             self.color = self.color.fade(self.fade_factor)
@@ -307,7 +326,8 @@ class Particle:
             update_speed=self.update_speed,
             time_of_creation=self._last_update,
             speed=self.speed,
-            fade_time=self.fade_time
+            fade_time=self.fade_time,
+            hue_delta=self.hue_delta_
         )
 
     def __repr__(self):
@@ -516,6 +536,51 @@ class ParticleLineGroup:
     def clear(self):
         for line in self.lines:
             line.clear()
+
+
+class SimpleCommand:
+    SECTION_ID_A = 0x00  # Section ID for section A
+    SECTION_ID_B = 0x01  # Section ID for section B
+    SECTION_ID_C = 0x02  # Section ID for section C
+
+    SECTION_LEN_A = 240  # Length of section A
+    SECTION_LEN_B = 176  # Length of section B
+    SECTION_LEN_C = 480  # Length of section C
+
+    def __init__(self, packet_id: uint8, section_id: uint8, pixels: PixelArray | PixelArrayView):
+        self.packet_id = packet_id  # Packet ID for the command
+        self.section_id = section_id  # Section ID for the command
+        self.pixels = pixels  # PixelArray or PixelArrayView containing pixel data
+
+        self.pixels_byte_len = len(pixels) * 3  # 3 bytes per pixel (GRB)
+        self.payload_len = 2 + self.pixels_byte_len
+        self.payload = bytearray(self.payload_len)
+
+    def set_packet_id(self, packet_id: uint8):
+        self.packet_id = packet_id
+
+    def to_bytes(self) -> bytes:
+        self.payload[0] = self.packet_id
+        self.payload[1] = self.section_id
+        self.payload[2:] = bytes(self.pixels)
+        return bytes(self.payload)
+
+
+class PyramidSimpleCommands:
+    def __init__(self, pixelsA: PixelArray | PixelArrayView, pixelsB: PixelArray | PixelArrayView, pixelsC: PixelArray | PixelArrayView):
+        self.packet_id = 0  # Packet ID for the commands
+        self.cmd_A = SimpleCommand(
+            self.packet_id, SimpleCommand.SECTION_ID_A, pixelsA)
+        self.cmd_B = SimpleCommand(
+            self.packet_id, SimpleCommand.SECTION_ID_B, pixelsB)
+        self.cmd_C = SimpleCommand(
+            self.packet_id, SimpleCommand.SECTION_ID_C, pixelsC)
+
+    def set_packet_ids(self, packet_id: uint8):
+        self.packet_id = packet_id
+        self.cmd_A.set_packet_id(packet_id)
+        self.cmd_B.set_packet_id(packet_id)
+        self.cmd_C.set_packet_id(packet_id)
 
 
 class Command:
@@ -817,6 +882,10 @@ class DigitalPyramid:
             for i in range(8)
         ]
 
+        self.cmds = PyramidSimpleCommands(
+            self.section_A, self.section_B, self.section_C)
+
+        """
         self.cmd_A = Command(Command.COMMAND_TYPE_FULL_SECTION,
                              Command.SECTION_ID_A, bytearray(), self.section_A)
         self.cmd_B = Command(Command.COMMAND_TYPE_FULL_SECTION,
@@ -825,6 +894,7 @@ class DigitalPyramid:
                              Command.SECTION_ID_C, bytearray(), self.section_C)
 
         self.cmds: List[Command] = [self.cmd_A, self.cmd_B, self.cmd_C]
+        """
 
     def update(self, update_time: float = time()):
         self.lines_A.update(update_time)
@@ -873,7 +943,7 @@ class DigitalPyramid:
                 (self.lines_A[(i + j) % 8], EndType.HEAD) for j in range(1, 8)
             ])
 
-    def combine(self, other: 'DigitalPyramid') -> List[Command]:
+    def combine(self, other: 'DigitalPyramid') -> PyramidSimpleCommands:
         if not isinstance(other, DigitalPyramid):
             raise ValueError(
                 "Can only combine with another DigitalPyramid instance")
@@ -883,14 +953,8 @@ class DigitalPyramid:
         combined_section_B = self.section_B + other.section_B
         combined_section_C = self.section_C + other.section_C
 
-        combined_cmd_A = Command(Command.COMMAND_TYPE_FULL_SECTION,
-                                 Command.SECTION_ID_A, bytearray(), combined_section_A)
-        combined_cmd_B = Command(Command.COMMAND_TYPE_FULL_SECTION,
-                                 Command.SECTION_ID_B, bytearray(), combined_section_B)
-        combined_cmd_C = Command(Command.COMMAND_TYPE_FULL_SECTION,
-                                 Command.SECTION_ID_C, bytearray(), combined_section_C)
-
-        return [combined_cmd_A, combined_cmd_B, combined_cmd_C]
+        return PyramidSimpleCommands(
+            combined_section_A, combined_section_B, combined_section_C)
 
 
 class Effect(ABC):
@@ -938,7 +1002,7 @@ class Effect(ABC):
 
     """Get the commands to be sent to the device."""
     @abstractmethod
-    def get_commands(self) -> List[Command]:
+    def get_commands(self) -> PyramidSimpleCommands:
         pass
 
 

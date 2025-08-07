@@ -1,9 +1,8 @@
 from dataclasses import dataclass
 from typing import Optional, List
 from ..utils import (
-    Command,
+    PyramidSimpleCommands,
     Effect,
-    DigitalPyramid,
     colors,
     Pixel,
     AudioInfo
@@ -38,5 +37,5 @@ class SpectrumOctagon(Effect):
             self.pyramid.triangle_body_groups[i].set_all(
                 self.config.colors[i % len(self.config.colors)].set_intensity(intensity))
 
-    def get_commands(self) -> List[Command]:
+    def get_commands(self) -> PyramidSimpleCommands:
         return self.pyramid.cmds

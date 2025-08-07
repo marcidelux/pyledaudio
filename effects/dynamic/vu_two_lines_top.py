@@ -1,12 +1,11 @@
 import time
 import colorsys
 from dataclasses import dataclass
-from typing import Optional, List
+from typing import Optional
 from ..utils import (
-    Command,
+    PyramidSimpleCommands,
     Effect,
     Pixel,
-    DigitalPyramid,
     AudioInfo
 )
 
@@ -63,5 +62,5 @@ class VuTwoLinesTop(Effect):
 
         self.previous_time = current_time
 
-    def get_commands(self) -> List[Command]:
+    def get_commands(self) -> PyramidSimpleCommands:
         return self.pyramid.cmds
