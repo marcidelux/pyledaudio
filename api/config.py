@@ -3,15 +3,17 @@ SERVER_IP = '0.0.0.0'
 SERVER_PORT = 9999
 UDP_IP = '192.168.100.150'
 UDP_PORT = 12345
+DISPLAY_FREQUENCY = 40
 
 
 def set_config(config: dict):
-    global N_FFT_BINS, SERVER_IP, SERVER_PORT, UDP_IP, UDP_PORT
+    global N_FFT_BINS, SERVER_IP, SERVER_PORT, UDP_IP, UDP_PORT, DISPLAY_FREQUENCY
     SERVER_IP = config.get('SERVER_IP', SERVER_IP)
     SERVER_PORT = config.get('SERVER_PORT', SERVER_PORT)
     N_FFT_BINS = config.get('N_FFT_BINS', N_FFT_BINS)
     UDP_IP = config.get('UDP_IP', UDP_IP)
     UDP_PORT = config.get('UDP_PORT', UDP_PORT)
+    DISPLAY_FREQUENCY = config.get('DISPLAY_FREQUENCY', DISPLAY_FREQUENCY)
 
     print("#### API ### - Current configuration:")
     print(f"SERVER_IP: {SERVER_IP}")
@@ -19,3 +21,4 @@ def set_config(config: dict):
     print(f"N_FFT_BINS: {N_FFT_BINS}\n")
     print(f"UDP_IP: {UDP_IP}")
     print(f"UDP_PORT: {UDP_PORT}\n")
+    print(f"DISPLAY_FREQUENCY: {DISPLAY_FREQUENCY}\n")

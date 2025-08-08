@@ -3,12 +3,17 @@ from fastapi import WebSocket, WebSocketDisconnect, FastAPI
 from typing import List
 import socket
 from . import config
+import time
 
 bands_clients: List[WebSocket] = []
 leds_clients: List[WebSocket] = []
+
 bands_queue: asyncio.Queue = asyncio.Queue()
 leds_queue: asyncio.Queue = asyncio.Queue()
 udp_send_queue: asyncio.Queue = asyncio.Queue()
+
+timer_leds_queue: asyncio.Queue = asyncio.Queue()
+timer_bands_queue: asyncio.Queue = asyncio.Queue()
 
 
 def register_websockets(app: FastAPI):
@@ -72,3 +77,23 @@ async def udp_sender_loop():
             await asyncio.sleep(0.005)
         except Exception as e:
             print(f"UDP send error: {e}")
+
+
+async def timed_display_dispatch_loop():
+    print("Starting timed display dispatch loop")
+    interval = 1.0 / config.DISPLAY_FREQUENCY
+    while True:
+        # if not timer_bands_queue.empty():
+        #    bands = await timer_bands_queue.get()
+        #    await bands_queue.put(bands)
+
+        if not timer_leds_queue.empty():
+            ledsA, ledsB, ledsC = await timer_leds_queue.get()
+            await leds_queue.put(ledsA)
+            await leds_queue.put(ledsB)
+            await leds_queue.put(ledsC)
+            await udp_send_queue.put(ledsA)
+            await udp_send_queue.put(ledsB)
+            await udp_send_queue.put(ledsC)
+
+        await asyncio.sleep(interval)

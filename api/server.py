@@ -12,6 +12,7 @@ from .broadcasters import (
     bands_broadcaster_loop,
     led_broadcaster_loop,
     udp_sender_loop,
+    timed_display_dispatch_loop,
     register_websockets
 )
 from .endpoints import register_endpoints
@@ -39,6 +40,7 @@ def start():
         loop.create_task(bands_broadcaster_loop())
         loop.create_task(led_broadcaster_loop())
         loop.create_task(udp_sender_loop())
+        loop.create_task(timed_display_dispatch_loop())
 
         loop.run_until_complete(server_instance.serve())
 

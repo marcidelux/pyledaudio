@@ -6,7 +6,7 @@ from effects import config as effects_config
 from effects.effects_manager import effect_manager
 from effects.utils import cmd_turn_off, PyramidSimpleCommands
 from api import server, config as api_config
-from api.broadcasters import bands_queue, leds_queue, udp_send_queue
+from api.broadcasters import timer_bands_queue, timer_leds_queue
 from state import state_manager
 from typing import List
 import numpy as np
@@ -28,24 +28,14 @@ def count_fps() -> None:
         fpscntr += 1
 
 
-def send_bands_to_client(band_levels: bytes) -> None:
-    # Only put data into queue if ready
-    if bands_queue is not None:
-        bands_queue.put_nowait(band_levels)
+def send_bands_data(band_levels: bytes) -> None:
+    if timer_bands_queue is not None:
+        timer_bands_queue.put_nowait(band_levels)
 
 
-def send_leds_to_client(data: bytes) -> None:
-    # Only put data into queue if ready
-    if leds_queue is not None:
-        leds_queue.put_nowait(data)
-
-
-def display_bands(audio_chunk: np.ndarray) -> None:
-    # count_fps()
-    band_levels = audioProcessor.create_band_levels(audio_chunk)
-    if band_levels == None:
-        return
-    send_bands_to_client(band_levels)
+def send_leds_data(data: bytes) -> None:
+    if timer_leds_queue is not None:
+        timer_leds_queue.put_nowait(data)
 
 
 def increment_packet_id() -> None:
@@ -63,7 +53,7 @@ def display_effects(audio_info: AudioInfo) -> None:
     if audio_info.bands is None:
         return
 
-    send_bands_to_client(audio_info.bands)
+    send_bands_data(audio_info.bands)
 
     if effect_manager.current_primary_effect.is_dynamic:
         effect_manager.current_primary_effect.update(audio_info)
@@ -88,26 +78,11 @@ def display_effects(audio_info: AudioInfo) -> None:
         increment_packet_id()
         commands.set_packet_ids(packet_id)
 
-        send_leds_to_client(commands.cmd_A.to_bytes())
-        send_leds_to_client(commands.cmd_B.to_bytes())
-        send_leds_to_client(commands.cmd_C.to_bytes())
-
-        udp_send_queue.put_nowait(commands.cmd_A.to_bytes())
-        udp_send_queue.put_nowait(commands.cmd_B.to_bytes())
-        udp_send_queue.put_nowait(commands.cmd_C.to_bytes())
-
-        # Send commands to UDP client
-        """
-        pixels_A_B = bytes(commands.cmd_A.pixels) + \
-            bytes(commands.cmd_B.pixels)
-        cmd_AB = bytearray(1250)
-        cmd_AB[0] = packet_id
-        cmd_AB[1] = 0
-        cmd_AB[2:] = pixels_A_B
-        commands.cmd_C.section_id = 1
-
-        udp_send_queue.put_nowait(cmd_AB)
-        """
+        send_leds_data((
+            commands.cmd_A.to_bytes(),
+            commands.cmd_B.to_bytes(),
+            commands.cmd_C.to_bytes()
+        ))
 
 
 def on_effect_change() -> None:
@@ -116,6 +91,7 @@ def on_effect_change() -> None:
 
 
 def init():
+    audioProcessor.list_audio_devices()
     conf_dict = config.get_config_dict()
     audio_config.set_config(conf_dict)
     api_config.set_config(conf_dict)
