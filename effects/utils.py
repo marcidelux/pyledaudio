@@ -111,6 +111,10 @@ class PixelArray:
         for i in range(len(self)):
             self[i] = self[i].set_intensity(intensity)
 
+    def set_fade(self, fade_factor: float):
+        for i in range(len(self)):
+            self[i] = self[i].fade(fade_factor)
+
     def set_all(self, pixel: Pixel):
         for i in range(len(self)):
             self[i] = pixel
@@ -1062,5 +1066,11 @@ class Line:
 
 # SINGLETONS #
 colors = Colors()
-cmd_turn_off = Command(Command.COMMAND_TYPE_OFF, 0x00,
-                       bytearray(), PixelArray(0))
+cmd_off: PyramidSimpleCommands = PyramidSimpleCommands(
+    PixelArray(Command.SECTION_LEN_A, pixels=[
+               colors.BLACK] * Command.SECTION_LEN_A),
+    PixelArray(Command.SECTION_LEN_B, pixels=[
+               colors.BLACK] * Command.SECTION_LEN_B),
+    PixelArray(Command.SECTION_LEN_C, pixels=[
+               colors.BLACK] * Command.SECTION_LEN_C)
+)

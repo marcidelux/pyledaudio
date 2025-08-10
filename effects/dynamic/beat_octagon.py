@@ -37,8 +37,8 @@ class BeatOctagon(Effect):
             )
 
     def update(self, audio_info: Optional[AudioInfo] = None) -> None:
-        if audio_info is None:
-            return None
+        if not audio_info or not audio_info.bands:
+            return
 
         current_time = time.time()
 

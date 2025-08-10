@@ -34,8 +34,8 @@ class VuTwoLinesTop(Effect):
         self.hue = 0.0  # start of the rainbow
 
     def update(self, audio_info: Optional[AudioInfo] = None) -> None:
-        if audio_info is None:
-            return None
+        if not audio_info or not audio_info.bands:
+            return
 
         current_time = time.time()
         if current_time - self.previous_time < self.config.update_speed:

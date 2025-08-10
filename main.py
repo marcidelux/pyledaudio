@@ -4,7 +4,7 @@ from audio import config as audio_config
 from audio.process import audioProcessor, AudioInfo
 from effects import config as effects_config
 from effects.effects_manager import effect_manager
-from effects.utils import cmd_turn_off, PyramidSimpleCommands
+from effects.utils import cmd_off, PyramidSimpleCommands
 from api import server, config as api_config
 from api.broadcasters import timer_bands_queue, timer_leds_queue
 from state import state_manager
@@ -45,12 +45,50 @@ def increment_packet_id() -> None:
         packet_id = 0
 
 
+def apply_brightness_to_commands(commands: PyramidSimpleCommands) -> None:
+    """Applies the current brightness setting to the commands."""
+    if state_manager.brightness == 255:
+        return
+
+    fade = np.clip(state_manager.brightness / 255.0, 0, 1)
+
+    commands.cmd_A.pixels.set_fade(fade)
+    commands.cmd_B.pixels.set_fade(fade)
+    commands.cmd_C.pixels.set_fade(fade)
+
+
 def display_effects(audio_info: AudioInfo) -> None:
-    global packet_id
+    global packet_id, state_manager
+
     count_fps()
     commands: PyramidSimpleCommands = None
 
+    if state_manager.power is False:
+        if state_manager.power_changed:
+            state_manager.power_changed = False
+            send_leds_data((
+                cmd_off.cmd_A.to_bytes(),
+                cmd_off.cmd_B.to_bytes(),
+                cmd_off.cmd_C.to_bytes()
+            ))
+        return
+
     if audio_info.bands is None:
+        if state_manager.no_sound:
+            return
+        else:
+            state_manager.no_sound_cntr += 1
+    else:
+        state_manager.no_sound_cntr = 0
+        state_manager.no_sound = False
+
+    if state_manager.no_sound_cntr > config.DISPLAY_FREQUENCY:
+        state_manager.no_sound = True
+        send_leds_data((
+            cmd_off.cmd_A.to_bytes(),
+            cmd_off.cmd_B.to_bytes(),
+            cmd_off.cmd_C.to_bytes()
+        ))
         return
 
     send_bands_data(audio_info.bands)
@@ -77,6 +115,7 @@ def display_effects(audio_info: AudioInfo) -> None:
     if commands is not None:
         increment_packet_id()
         commands.set_packet_ids(packet_id)
+        apply_brightness_to_commands(commands)
 
         send_leds_data((
             commands.cmd_A.to_bytes(),
@@ -86,7 +125,6 @@ def display_effects(audio_info: AudioInfo) -> None:
 
 
 def on_effect_change() -> None:
-    # send_leds_to_client(cmd_turn_off.to_bytes())
     print("Effect changed")
 
 

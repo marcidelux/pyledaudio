@@ -1,5 +1,12 @@
 import { API } from "./api.js";
-import { EffectList, EffectPair, AddEffectListRequest, SelectCurrentEffectByIndexRequest } from './models.js';
+import {
+    EffectList,
+    EffectPair,
+    AddEffectListRequest,
+    SelectCurrentEffectByIndexRequest,
+    PowerRequest,
+    BrightnessRequest
+} from './models.js';
 
 let effect_lists = [];
 
@@ -12,11 +19,11 @@ let ui_delete_list_bt = null;
 
 document.addEventListener("DOMContentLoaded", () => {
     createToggleSwitch("#power-sw", true, "POWER", (state) => {
-        postPower(state);
+        onClickPowerSwitch(state);
     });
 
     createSlider("#brightness-sb", 10, 255, 255, "brightness", (val) => {
-        postBrightness(val);
+        onChangeBrightness(val);
     });
 
     ui_new_list_name = createTextInput("#new-effect-list-name", "New List Name", "Enter new list name");
@@ -57,6 +64,26 @@ document.addEventListener("DOMContentLoaded", () => {
 
     uiInit();
 });
+
+async function onClickPowerSwitch(state) {
+    const request = new PowerRequest(state);
+    try {
+        await API.setPower(request);
+        console.log(`Power state set to: ${state}`);
+    } catch (err) {
+        console.error("Error setting power state:", err);
+    }
+}
+
+async function onChangeBrightness(value) {
+    const request = new BrightnessRequest(value);
+    try {
+        await API.setBrightness(request);
+        console.log(`Brightness set to: ${value}`);
+    } catch (err) {
+        console.error("Error setting brightness:", err);
+    }
+}
 
 async function updateEffectLists() {
     try {

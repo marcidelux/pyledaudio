@@ -29,8 +29,8 @@ class SpectrumTwoLines(Effect):
         self.beat_cntr = 0
 
     def update(self, audio_info: Optional[AudioInfo] = None) -> None:
-        if audio_info is None:
-            return None
+        if not audio_info or not audio_info.bands:
+            return
 
         self.pyramid.clear()
         num_bands = len(audio_info.bands)

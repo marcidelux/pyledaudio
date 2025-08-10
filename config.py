@@ -5,12 +5,12 @@ SERVER_GUI = True
 
 # SERVER DATA FOR WEBSOCKET and WEB UI
 SERVER_IP = '0.0.0.0'
-SERVER_PORT = 9999
+SERVER_PORT = 9876
 
 MIC_RATE = 48000
 """Sampling frequency of the microphone in Hz"""
 
-MIC_DEVICE_INDEX = 4
+MIC_DEVICE_INDEX = 9
 MIN_FREQUENCY = 60
 """Frequencies below this value will be removed during audio processing"""
 MAX_FREQUENCY = 18000
@@ -18,6 +18,7 @@ MAX_FREQUENCY = 18000
 
 SAMPLING_FREQUENCY = 300
 DISPLAY_FREQUENCY = 30
+MAX_VOLUME = 0.002
 
 N_FFT_BINS = 8
 """Number of frequency bins to use when transforming audio to frequency domain"""

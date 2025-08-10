@@ -67,6 +67,9 @@ class BeatBlast(Effect):
     def update(self, audio_info: Optional[AudioInfo] = None) -> None:
         current_time = time.time()
 
+        if not audio_info or not audio_info.bands:
+            return
+
         if audio_info.beat_detected:
             # print("spawn beat particle", current_time)
             lifetime = 60 / audio_info.bpm

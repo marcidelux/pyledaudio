@@ -74,20 +74,29 @@ async def udp_sender_loop():
             data = await udp_send_queue.get()
             # print(f"id:{data[0]} s:{data[1]}")
             await loop.sock_sendto(udp_socket, data, address)
-            await asyncio.sleep(0.005)
+            await asyncio.sleep(0.001)
         except Exception as e:
             print(f"UDP send error: {e}")
 
 
 async def timed_display_dispatch_loop():
     print("Starting timed display dispatch loop")
-    interval = 1.0 / config.DISPLAY_FREQUENCY
-    while True:
-        # if not timer_bands_queue.empty():
-        #    bands = await timer_bands_queue.get()
-        #    await bands_queue.put(bands)
+    interval = 1.0 / (config.DISPLAY_FREQUENCY)
+    small_time = 0.001
+    overflow_count = 0
 
-        if not timer_leds_queue.empty():
+    while True:
+        if not timer_bands_queue.empty():
+            bands = await timer_bands_queue.get()
+            await bands_queue.put(bands)
+
+            while not timer_bands_queue.empty():
+                await timer_bands_queue.get()
+
+        overflow_count = 0
+        timer_leds_queue_len = timer_leds_queue.qsize()
+
+        for i in range(timer_leds_queue_len):
             ledsA, ledsB, ledsC = await timer_leds_queue.get()
             await leds_queue.put(ledsA)
             await leds_queue.put(ledsB)
@@ -96,4 +105,8 @@ async def timed_display_dispatch_loop():
             await udp_send_queue.put(ledsB)
             await udp_send_queue.put(ledsC)
 
-        await asyncio.sleep(interval)
+            if i > 0:
+                overflow_count += 1
+                await asyncio.sleep(small_time)
+
+        await asyncio.sleep(interval - (small_time * overflow_count))

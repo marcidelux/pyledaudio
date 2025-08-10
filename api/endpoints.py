@@ -43,7 +43,12 @@ def register_endpoints(app: FastAPI):
     def set_power(req: PowerRequest):
         if req.power is None:
             return JSONResponse(content={"error": "No power value provided"}, status_code=HTTPStatus.BAD_REQUEST)
+        if state_manager.power == req.power:
+            return JSONResponse(content={"info": "Power state unchanged"}, status_code=HTTPStatus.OK)
+
+        state_manager.power_changed = True
         state_manager.power = req.power
+
         return JSONResponse(content={"power": state_manager.power}, status_code=HTTPStatus.OK)
 
     @app.post("/state/brightness")
