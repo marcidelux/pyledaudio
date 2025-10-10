@@ -101,9 +101,9 @@ async def timed_display_dispatch_loop():
             await leds_queue.put(ledsA)
             await leds_queue.put(ledsB)
             await leds_queue.put(ledsC)
-            await udp_send_queue.put(ledsA)
-            await udp_send_queue.put(ledsB)
-            await udp_send_queue.put(ledsC)
+            # await udp_send_queue.put(ledsA)
+            # await udp_send_queue.put(ledsB)
+            # await udp_send_queue.put(ledsC)
 
             if i > 0:
                 overflow_count += 1

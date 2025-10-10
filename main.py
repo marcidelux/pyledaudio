@@ -1,7 +1,7 @@
 import config
 
 from audio import config as audio_config
-from audio.process import audioProcessor, AudioInfo
+from audio.jackconnector import audioProcessor, AudioInfo
 from effects import config as effects_config
 from effects.effects_manager import effect_manager
 from effects.utils import cmd_off, PyramidSimpleCommands
@@ -11,19 +11,20 @@ from state import state_manager
 from typing import List
 import numpy as np
 import time
+import random
 
 fpscntr = 0
 last_time = time.time()
+last_time_next_effect = time.time()
 packet_id: np.uint8 = 0
 
 
-def count_fps() -> None:
+def count_fps(now) -> None:
     global fpscntr, last_time
-    current_time = time.time()
-    if current_time - last_time >= 1:
+    if now - last_time >= 1:
         print(f"FPS: {fpscntr}")
         fpscntr = 0
-        last_time = current_time
+        last_time = now
     else:
         fpscntr += 1
 
@@ -57,10 +58,22 @@ def apply_brightness_to_commands(commands: PyramidSimpleCommands) -> None:
     commands.cmd_C.pixels.set_fade(fade)
 
 
+def next_time_counter(now) -> None:
+    global last_time_next_effect
+
+    if now - last_time_next_effect >= state_manager.step_time:
+        effect_manager.random_effect_pair()
+        last_time_next_effect = now
+        state_manager.step_time = random.uniform(30, 60)
+
+
 def display_effects(audio_info: AudioInfo) -> None:
     global packet_id, state_manager
 
-    count_fps()
+    now = time.time()
+    count_fps(now)
+    next_time_counter(now)
+
     commands: PyramidSimpleCommands = None
 
     if state_manager.power is False:

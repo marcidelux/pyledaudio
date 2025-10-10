@@ -161,7 +161,8 @@
     }
 
     // WebSocket integration
-    const socket = new WebSocket(`ws://${location.host}/ws/leds`);
+    const proto = location.protocol === 'https:' ? 'wss' : 'ws';
+    const socket = new WebSocket(`${proto}://${location.host}/ws/leds`);
     socket.binaryType = "arraybuffer";
 
     socket.onmessage = function (event) {

@@ -1,14 +1,13 @@
 from typing import Optional, Callable
 from http import HTTPStatus
+import random
 
 from .utils import Effect
 
 # Effect imports
-from .static.bottom_triangles import BottomTriangles
-from .static.side_triangles import SideTriangles
-from .static.body_triangles import BodyTriangles
 from .static.snake import Snake
 from .static.big_snake import BigSnake
+from .static.stars import Stars
 
 from .dynamic.spectrum_octagon import SpectrumOctagon
 from .dynamic.spectrum_triangles import SpectrumTriangles
@@ -32,23 +31,19 @@ class EffectManager:
     vu_two_lines_top: VuTwoLinesTop = VuTwoLinesTop()
 
     # Static effects
-    bottom_triangles: BottomTriangles = BottomTriangles()
-    side_triangles: SideTriangles = SideTriangles()
-    body_triangles: BodyTriangles = BodyTriangles()
     snake: Snake = Snake()
     big_snake: BigSnake = BigSnake()
+    stars: Stars = Stars()
 
     all_effects_map: dict[str, Effect] = {
+        snake.config.name: snake,
+        big_snake.config.name: big_snake,
+        stars.config.name: stars,
         spectrum_octagon.config.name: spectrum_octagon,
         spectrum_triangles.config.name: spectrum_triangles,
-        bottom_triangles.config.name: bottom_triangles,
-        side_triangles.config.name: side_triangles,
-        body_triangles.config.name: body_triangles,
         beat_blast.config.name: beat_blast,
         beat_octagon.config.name: beat_octagon,
         spectrum_two_lines.config.name: spectrum_two_lines,
-        snake.config.name: snake,
-        big_snake.config.name: big_snake,
         vu_two_lines.config.name: vu_two_lines,
         vu_two_lines_top.config.name: vu_two_lines_top
     }
@@ -64,11 +59,9 @@ class EffectManager:
     ]
 
     static_names: list[str] = [
-        bottom_triangles.config.name,
-        side_triangles.config.name,
-        body_triangles.config.name,
         snake.config.name,
-        big_snake.config.name
+        big_snake.config.name,
+        stars.config.name
     ]
 
     def __init__(self):
@@ -193,6 +186,22 @@ class EffectManager:
 
         self.current_index = index
         return self.select_pair(self.current_index)
+
+    def random_effect_pair(self) -> int:
+        if self.current_list is None:
+            return HTTPStatus.NOT_FOUND
+
+        random_index = random.randint(
+            0, len(self.current_list.effects) - 1)
+
+        if random_index == self.current_index:
+            return self.next_effect_pair()
+
+        self.current_index = random_index
+        if self.select_pair(self.current_index) != HTTPStatus.OK:
+            return HTTPStatus.NOT_FOUND
+
+        return self.current_index
 
     def next_effect_pair(self) -> int:
         if self.current_list is None:

@@ -70,7 +70,8 @@
         }
       });
 
-      const socket = new WebSocket(`ws://${location.host}/ws/bands`);
+      const proto = location.protocol === 'https:' ? 'wss' : 'ws';
+      const socket = new WebSocket(`${proto}://${location.host}/ws/bands`);
       socket.onmessage = event => {
         const msg = JSON.parse(event.data);
         if (msg.bands) {

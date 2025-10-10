@@ -4,23 +4,15 @@
         "switch_interval": 30,
         "effects": [
             {
-                "primary": "BottomTriangles",
-                "secondary": null
-            },
-            {
-                "primary": "SideTriangles",
-                "secondary": null
-            },
-            {
-                "primary": "BodyTriangles",
-                "secondary": null
-            },
-            {
                 "primary": "Snake",
                 "secondary": null
             },
             {
                 "primary": "BigSnake",
+                "secondary": null
+            },
+            {
+                "primary": "Stars",
                 "secondary": null
             }
         ]
@@ -51,6 +43,100 @@
             },
             {
                 "primary": "VuTwoLines",
+                "secondary": null
+            },
+            {
+                "primary": "VuTwoLinesTop",
+                "secondary": null
+            }
+        ]
+    },
+    {
+        "name": "mumush",
+        "switch_interval": 30,
+        "effects": [
+            {
+                "primary": "SpectrumOctagon",
+                "secondary": "Snake"
+            },
+            {
+                "primary": "VuTwoLines",
+                "secondary": null
+            },
+            {
+                "primary": "VuTwoLinesTop",
+                "secondary": "BeatOctagon"
+            },
+            {
+                "primary": "SpectrumTwoLines",
+                "secondary": null
+            },
+            {
+                "primary": "SpectrumTriangles",
+                "secondary": "BigSnake"
+            },
+            {
+                "primary": "SpectrumOctagon",
+                "secondary": null
+            },
+            {
+                "primary": "BeatBlast",
+                "secondary": "VuTwoLinesTop"
+            },
+            {
+                "primary": "SpectrumTwoLines",
+                "secondary": "Snake"
+            },
+            {
+                "primary": "VuTwoLines",
+                "secondary": "BigSnake"
+            },
+            {
+                "primary": "BigSnake",
+                "secondary": "BeatBlast"
+            },
+            {
+                "primary": "Stars",
+                "secondary": "BigSnake"
+            }
+        ]
+    },
+    {
+        "name": "Low_light",
+        "switch_interval": 30,
+        "effects": [
+            {
+                "primary": "BigSnake",
+                "secondary": null
+            },
+            {
+                "primary": "BeatBlast",
+                "secondary": null
+            },
+            {
+                "primary": "BeatOctagon",
+                "secondary": null
+            },
+            {
+                "primary": "Snake",
+                "secondary": null
+            },
+            {
+                "primary": "Stars",
+                "secondary": null
+            }
+        ]
+    },
+    {
+        "name": "Chill",
+        "switch_interval": 30,
+        "effects": [
+            {
+                "primary": "BigSnake",
+                "secondary": null
+            },
+            {
+                "primary": "BeatOctagon",
                 "secondary": null
             },
             {

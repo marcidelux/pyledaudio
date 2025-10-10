@@ -36,12 +36,12 @@ def shift_pixel_hue(pixel: Pixel, hue_shift: float) -> Pixel:
     return Pixel(int(r_new * 255), int(g_new * 255), int(b_new * 255))
 
 
-class BigSnake(Effect):
+class Stars(Effect):
     def __init__(self):
         super().__init__()
         self.is_dynamic = False  # Static effect
         self.config = EffectConfig(
-            name="BigSnake",
+            name="Stars",
             update_speed=0.03,
             colors=[
                 colors.RED, colors.GREEN,
@@ -52,13 +52,7 @@ class BigSnake(Effect):
         )
         self.previous_time = time.time()
         self.previous_spawn_time = self.previous_time
-        self.spawn_time = 10
-
-        self.pyramid.lines_A.set_gates_mode(GateMode.ARROW)
-        self.pyramid.lines_B.set_gates_mode(GateMode.ARROW)
-        self.pyramid.lines_C.set_gates_mode(GateMode.ARROW)
-
-        self.pyramid.connect_all_particle_lines()
+        self.spawn_time = random.uniform(2, 8)
 
         self.hue_delta = 0.01  # start of the rainbow
 
@@ -69,30 +63,45 @@ class BigSnake(Effect):
             return None
 
         if current_time >= self.previous_spawn_time + self.spawn_time:
+            self.spawn_time = random.uniform(2, 8)
             self.previous_spawn_time = current_time
-            random_index = random.randint(0, 7)
-            length = 30
-            random_color = random.choice(self.config.colors)
-            random_lines = random.randint(0, 1)
 
-            for i in range(length):
-                particle = Particle(
-                    color=random_color.set_intensity(int(i * (255 / length))),
-                    position=i,
+            number_of_stars = random.randint(5, 20)
+
+            for _ in range(number_of_stars):
+                random_lifetime = random.randint(5, 15)
+                random_A_index = random.randint(0, 7)
+                random_B_index = random.randint(0, 7)
+                random_C_index = random.randint(0, 7)
+
+                random_color = random.choice(self.config.colors)
+
+                random_line = random.randint(0, 2)
+                if random_line == 0:
+                    random_position = random.randint(0, 29)
+                elif random_line == 1:
+                    random_position = random.randint(0, 21)
+                else:
+                    random_position = random.randint(0, 59)
+
+                star = Particle(
+                    color=random_color,
+                    position=random_position,
                     direction=1,
-                    lifetime=30,
+                    lifetime=random_lifetime,
                     update_speed=0.03,
-                    speed=1,
-                    fade_time=1,
+                    speed=0,
+                    fade_time=4,
                     time_of_creation=current_time,
                     hue_delta=self.hue_delta
                 )
-                if random_lines == 0:
-                    # Add to line A
-                    self.pyramid.lines_A[random_index].add_particle(particle)
+
+                if random_line == 0:
+                    self.pyramid.lines_A[random_A_index].add_particle(star)
+                elif random_line == 1:
+                    self.pyramid.lines_B[random_B_index].add_particle(star)
                 else:
-                    # Add to line B
-                    self.pyramid.lines_C[random_index].add_particle(particle)
+                    self.pyramid.lines_C[random_C_index].add_particle(star)
 
         self.pyramid.update(current_time)
         self.previous_time = current_time

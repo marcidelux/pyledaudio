@@ -9,6 +9,7 @@ class State(BaseModel):
     power_changed: Optional[bool] = Field(default=None)
     no_sound_cntr: Optional[int] = Field(default=None)
     no_sound: Optional[bool] = Field(default=None)
+    step_time: Optional[float] = Field(default=None)
 
 
 class StateManager:
@@ -18,7 +19,8 @@ class StateManager:
                             effect="Snake",
                             power_changed=False,
                             no_sound_cntr=0,
-                            no_sound=False)
+                            no_sound=False,
+                            step_time=30.0)
         self._on_effect_change: Optional[Callable[[str], None]] = None
 
     def set_effect_callback(self, callback: Callable[[str], None]):
@@ -75,6 +77,14 @@ class StateManager:
     @no_sound.setter
     def no_sound(self, val: bool):
         self._state.no_sound = val
+
+    @property
+    def step_time(self):
+        return self._state.step_time
+
+    @step_time.setter
+    def step_time(self, val: float):
+        self._state.step_time = val
 
     def __str__(self):
         return f"State(power={self.power}, brightness={self.brightness}, effect={self.effect})"

@@ -4,13 +4,13 @@ UDP_PORT = 12345
 SERVER_GUI = True
 
 # SERVER DATA FOR WEBSOCKET and WEB UI
-SERVER_IP = '0.0.0.0'
-SERVER_PORT = 9876
+SERVER_IP = '192.168.60.50'
+SERVER_PORT = 9999
 
 MIC_RATE = 48000
 """Sampling frequency of the microphone in Hz"""
 
-MIC_DEVICE_INDEX = 9
+MIC_DEVICE_INDEX = 0
 MIN_FREQUENCY = 60
 """Frequencies below this value will be removed during audio processing"""
 MAX_FREQUENCY = 18000

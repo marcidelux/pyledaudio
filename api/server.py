@@ -39,7 +39,7 @@ def start():
 
         loop.create_task(bands_broadcaster_loop())
         loop.create_task(led_broadcaster_loop())
-        loop.create_task(udp_sender_loop())
+        # loop.create_task(udp_sender_loop())
         loop.create_task(timed_display_dispatch_loop())
 
         loop.run_until_complete(server_instance.serve())
