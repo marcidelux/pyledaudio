@@ -1,0 +1,676 @@
+openapi: 3.0.3
+info:
+  title: PsyLED API
+  version: 0.1.0
+  description: |
+    API contract for the Go migration of the PsyLED audio-reactive LED
+    controller.
+
+    This contract is based on the current Python FastAPI implementation in
+    `api/endpoints.py` and `api/broadcasters.py`.
+
+    WebSocket routes are documented with `x-websocket-endpoints` because
+    OpenAPI 3.0 does not formally model WebSocket message streams.
+servers:
+  - url: http://localhost:9876
+    description: Local development server
+tags:
+  - name: Health
+  - name: Config
+  - name: State
+  - name: Effect Lists
+  - name: Current Effect List
+  - name: Effect Preview
+paths:
+  /health:
+    get:
+      tags: [Health]
+      summary: Health check
+      operationId: getHealth
+      responses:
+        "200":
+          description: Service is healthy.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthResponse"
+              examples:
+                ok:
+                  value:
+                    "200": "OK"
+
+  /config:
+    get:
+      tags: [Config]
+      summary: Get UI visualization config
+      operationId: getConfig
+      responses:
+        "200":
+          description: Band count and display colors for the browser chart.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UiConfig"
+
+  /state:
+    get:
+      tags: [State]
+      summary: Get runtime state
+      operationId: getState
+      responses:
+        "200":
+          description: Current power and brightness.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/State"
+
+  /state/power:
+    post:
+      tags: [State]
+      summary: Set power state
+      operationId: setPower
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PowerRequest"
+      responses:
+        "200":
+          description: Power was updated, or it was already in the requested state.
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: "#/components/schemas/PowerResponse"
+                  - $ref: "#/components/schemas/InfoResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+
+  /state/brightness:
+    post:
+      tags: [State]
+      summary: Set brightness
+      operationId: setBrightness
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BrightnessRequest"
+      responses:
+        "200":
+          description: Brightness was updated.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BrightnessResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+
+  /effect-list:
+    get:
+      tags: [Effect Lists]
+      summary: List all effect lists
+      operationId: getEffectLists
+      responses:
+        "200":
+          description: All persisted and built-in effect lists.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/EffectList"
+    post:
+      tags: [Effect Lists]
+      summary: Create an effect list
+      operationId: createEffectList
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AddEffectListRequest"
+      responses:
+        "200":
+          description: Updated list collection after creation.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/EffectList"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "409":
+          $ref: "#/components/responses/Conflict"
+
+  /effect-list/{list_name}:
+    parameters:
+      - $ref: "#/components/parameters/ListName"
+    get:
+      tags: [Effect Lists]
+      summary: Get an effect list by name
+      operationId: getEffectListByName
+      responses:
+        "200":
+          description: Matching effect list.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EffectList"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    post:
+      tags: [Effect Lists]
+      summary: Select the current effect list
+      operationId: selectEffectList
+      responses:
+        "200":
+          description: Selected effect list.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EffectList"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    delete:
+      tags: [Effect Lists]
+      summary: Remove an effect list
+      operationId: deleteEffectList
+      description: Built-in lists `static` and `dynamic` cannot be deleted.
+      responses:
+        "200":
+          description: Updated list collection after deletion.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/EffectList"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /effect-list/{list_name}/append:
+    post:
+      tags: [Effect Lists]
+      summary: Append an effect pair to a custom list
+      operationId: appendEffectPairToList
+      description: Built-in lists `static` and `dynamic` cannot be modified.
+      parameters:
+        - $ref: "#/components/parameters/ListName"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EffectPair"
+      responses:
+        "200":
+          description: Updated effect list.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EffectList"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+
+  /effect-list/{list_name}/remove:
+    delete:
+      tags: [Effect Lists]
+      summary: Remove an effect pair from a custom list
+      operationId: removeEffectPairFromList
+      description: Built-in lists `static` and `dynamic` cannot be modified.
+      parameters:
+        - $ref: "#/components/parameters/ListName"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EffectPair"
+      responses:
+        "200":
+          description: Updated effect list.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EffectList"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /effect-list-names:
+    get:
+      tags: [Effect Lists]
+      summary: List effect list names
+      operationId: getEffectListNames
+      responses:
+        "200":
+          description: Names of all effect lists.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EffectListNamesResponse"
+
+  /effect-list-current:
+    get:
+      tags: [Current Effect List]
+      summary: Get the current effect list
+      operationId: getCurrentEffectList
+      responses:
+        "200":
+          description: Current effect list.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EffectList"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /effect-list-current/name:
+    get:
+      tags: [Current Effect List]
+      summary: Get the current effect list name
+      operationId: getCurrentEffectListName
+      responses:
+        "200":
+          description: Current effect list name.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NameResponse"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /effect-list-current/pair:
+    get:
+      tags: [Current Effect List]
+      summary: Get the current effect pair
+      operationId: getCurrentEffectPair
+      responses:
+        "200":
+          description: Current effect pair.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EffectPair"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /effect-list-current/index:
+    get:
+      tags: [Current Effect List]
+      summary: Get current effect pair index
+      operationId: getCurrentEffectIndex
+      responses:
+        "200":
+          description: Current index in the selected effect list.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/IndexResponse"
+    post:
+      tags: [Current Effect List]
+      summary: Select current effect pair by index
+      operationId: setCurrentEffectIndex
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SelectCurrentEffectByIndexRequest"
+      responses:
+        "200":
+          description: Selected index, or informational response for an empty list.
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: "#/components/schemas/IndexResponse"
+                  - $ref: "#/components/schemas/InfoResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /effect-list-current/next:
+    post:
+      tags: [Current Effect List]
+      summary: Select the next effect pair
+      operationId: selectNextEffect
+      responses:
+        "200":
+          description: New current effect pair index.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/IndexResponse"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /effect-list-current/previous:
+    post:
+      tags: [Current Effect List]
+      summary: Select the previous effect pair
+      operationId: selectPreviousEffect
+      responses:
+        "200":
+          description: New current effect pair index.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/IndexResponse"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /effect-pair/preview:
+    post:
+      tags: [Effect Preview]
+      summary: Preview a primary/secondary effect pair
+      operationId: previewEffectPair
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EffectPair"
+      responses:
+        "200":
+          description: Preview was updated.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StatusResponse"
+        "404":
+          description: The current Python code can return this from the effect manager,
+            but the endpoint currently ignores that status. The Go implementation
+            should return 404 for unknown effect names.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+components:
+  parameters:
+    ListName:
+      name: list_name
+      in: path
+      required: true
+      schema:
+        type: string
+        minLength: 1
+      example: static
+
+  responses:
+    BadRequest:
+      description: Invalid request.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    Forbidden:
+      description: Operation is forbidden.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    NotFound:
+      description: Resource was not found.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    Conflict:
+      description: Resource already exists or duplicate item.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+
+  schemas:
+    HealthResponse:
+      type: object
+      additionalProperties:
+        type: string
+      example:
+        "200": "OK"
+
+    UiConfig:
+      type: object
+      required: [num_bands, colors]
+      properties:
+        num_bands:
+          type: integer
+          minimum: 1
+          example: 8
+        colors:
+          type: array
+          items:
+            type: string
+            pattern: "^#[0-9A-Fa-f]{6}$"
+          example:
+            - "#003f5c"
+            - "#2f4b7c"
+            - "#665191"
+
+    State:
+      type: object
+      required: [power, brightness]
+      properties:
+        power:
+          type: boolean
+          example: true
+        brightness:
+          type: integer
+          minimum: 0
+          maximum: 255
+          example: 255
+
+    PowerRequest:
+      type: object
+      properties:
+        power:
+          type: boolean
+          nullable: true
+      example:
+        power: true
+
+    PowerResponse:
+      type: object
+      required: [power]
+      properties:
+        power:
+          type: boolean
+      example:
+        power: true
+
+    BrightnessRequest:
+      type: object
+      properties:
+        brightness:
+          type: integer
+          minimum: 0
+          maximum: 255
+          nullable: true
+      example:
+        brightness: 180
+
+    BrightnessResponse:
+      type: object
+      required: [brightness]
+      properties:
+        brightness:
+          type: integer
+          minimum: 0
+          maximum: 255
+      example:
+        brightness: 180
+
+    EffectPair:
+      type: object
+      required: [primary]
+      properties:
+        primary:
+          type: string
+          minLength: 1
+          example: SpectrumTriangles
+        secondary:
+          type: string
+          nullable: true
+          example: Snake
+
+    EffectList:
+      type: object
+      required: [name, switch_interval, effects]
+      properties:
+        name:
+          type: string
+          minLength: 1
+          example: dynamic
+        switch_interval:
+          type: integer
+          minimum: 0
+          example: 30
+        effects:
+          type: array
+          items:
+            $ref: "#/components/schemas/EffectPair"
+
+    AddEffectListRequest:
+      type: object
+      required: [name]
+      x-current-python-note: >
+        The Python Pydantic model currently declares `effects` as a nullable
+        single EffectPair, but endpoint code treats it as a list. The Go API
+        should use the array shape documented here.
+      properties:
+        name:
+          type: string
+          minLength: 1
+          example: favorites
+        switch_interval:
+          type: integer
+          minimum: 0
+          nullable: true
+          default: 30
+        effects:
+          type: array
+          nullable: true
+          items:
+            $ref: "#/components/schemas/EffectPair"
+          default: []
+
+    SelectCurrentEffectByIndexRequest:
+      type: object
+      required: [index]
+      properties:
+        index:
+          type: integer
+          minimum: 0
+          example: 0
+
+    EffectListNamesResponse:
+      type: object
+      required: [list_names]
+      properties:
+        list_names:
+          type: array
+          items:
+            type: string
+          example:
+            - static
+            - dynamic
+
+    NameResponse:
+      type: object
+      required: [name]
+      properties:
+        name:
+          type: string
+          example: static
+
+    IndexResponse:
+      type: object
+      required: [index]
+      properties:
+        index:
+          type: integer
+          minimum: 0
+          example: 0
+
+    StatusResponse:
+      type: object
+      required: [status]
+      properties:
+        status:
+          type: string
+          example: Preview updated
+
+    InfoResponse:
+      type: object
+      required: [info]
+      properties:
+        info:
+          type: string
+          example: Power state unchanged
+
+    ErrorResponse:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: string
+          example: Effect list not found
+
+x-websocket-endpoints:
+  - path: /ws/bands
+    summary: Band level stream
+    direction: server-to-client
+    message:
+      contentType: application/json
+      schema:
+        type: object
+        required: [bands]
+        properties:
+          bands:
+            type: array
+            items:
+              type: integer
+              minimum: 0
+              maximum: 255
+        example:
+          bands: [0, 12, 44, 128, 255, 90, 30, 4]
+  - path: /ws/leds
+    summary: LED section frame stream
+    direction: server-to-client
+    message:
+      contentType: application/octet-stream
+      schema:
+        type: string
+        format: binary
+      binaryFormat:
+        byte0: packet_id uint8
+        byte1: section_id uint8, A=0, B=1, C=2
+        byte2_to_end: RGB pixel bytes, three bytes per LED
+      payloadSizes:
+        sectionA: 722
+        sectionB: 530
+        sectionC: 1442

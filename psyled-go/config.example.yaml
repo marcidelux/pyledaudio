@@ -1,0 +1,26 @@
+server:
+  host: "0.0.0.0"
+  port: 9876
+
+audio:
+  client_name: "psyled-go"
+  input_port_name: "audio_in"
+  source_ports: []
+  auto_connect: true
+  start_server: false
+  fft_size: 2048
+  band_count: 8
+  min_frequency: 60
+  max_frequency: 18000
+  gain: 0
+  smoothing_alpha: 0.35
+  sample_buffer: 4
+  output_buffer: 2
+
+udp:
+  host: "192.168.60.150"
+  port: 12345
+
+effects:
+  memory_file: "../memory.json"
+  default_list: "static"
